@@ -18,18 +18,17 @@
     <!-- Firebase SDKs -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
       import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-      // CONFIGURAÇÃO DO FIREBASE (SUBSTITUA PELAS SUAS CREDENCIAIS)
       const firebaseConfig = {
-        apiKey: "SUA_API_KEY",
-        authDomain: "SEU_PROJETO.firebaseapp.com",
-        projectId: "SEU_PROJETO",
-        storageBucket: "SEU_PROJETO.firebasestorage.app",
-        messagingSenderId: "SEU_SENDER_ID",
-        appId: "SEU_APP_ID",
-        measurementId: "SEU_MEASUREMENT_ID"
+        apiKey: "AIzaSyC8wLrhcS82ZS-WLWoXtTGOhWPHuiPQIcM",
+        authDomain: "tubarao-b9777.firebaseapp.com",
+        projectId: "tubarao-b9777",
+        storageBucket: "tubarao-b9777.firebasestorage.app",
+        messagingSenderId: "172502768936",
+        appId: "1:172502768936:web:44aeebda0b96d41f5f441d",
+        measurementId: "G-GC0Y3LP3BV"
       };
 
       // Inicializar Firebase
@@ -55,8 +54,7 @@
           onSnapshot,
           query,
           orderBy,
-          limit,
-          where
+          limit
         },
         auth: {
           getAuth,
@@ -332,6 +330,11 @@
         <div class="bg-white w-full max-w-md rounded-t-[45px] p-7 space-y-4 max-h-[94vh] overflow-y-auto shadow-2xl text-black">
             <div class="flex justify-between items-center font-bebas uppercase text-xl text-blue-600"><h2>Finalizar Pedido</h2><button onclick="fecharCheckout()" class="text-2xl text-gray-300">✕</button></div>
             
+            <div class="grid grid-cols-2 gap-2 p-1 bg-blue-50 rounded-2xl">
+                <button onclick="setModoConsumo('delivery')" id="btn-m-delivery" class="p-3 text-[9px] font-black rounded-xl bg-white shadow-sm border border-blue-200 text-black uppercase">Delivery</button>
+                <button onclick="setModoConsumo('retirada')" id="btn-m-retirada" class="p-3 text-[9px] font-black rounded-xl text-gray-400 uppercase">Retirada</button>
+            </div>
+
             <div id="checkout-itens-list" class="bg-blue-50 p-4 rounded-3xl border border-blue-100 space-y-2 text-[10px] font-bold text-gray-600 italic">
                 <!-- Itens do carrinho serão listados aqui -->
             </div>
@@ -390,7 +393,6 @@
             <button onclick="switchTab('cupons')" id="tab-cupons" class="flex-1 p-4 font-bold text-[9px] uppercase text-gray-400">🎫 Cupons</button>
             <button onclick="switchTab('config')" id="tab-config" class="flex-1 p-4 font-bold text-[9px] uppercase whitespace-nowrap tracking-tighter text-gray-400">⚙️ Config</button>
             <button onclick="switchTab('promocoes')" id="tab-promocoes" class="flex-1 p-4 font-bold text-[9px] uppercase text-gray-400">🔥 Promoções</button>
-            <button onclick="switchTab('estabelecimentos')" id="tab-estabelecimentos" class="flex-1 p-4 font-bold text-[9px] uppercase text-gray-400">🏪 Estabelecimentos</button>
         </div>
         <div id="adm-content" class="p-4 space-y-4">
             <div id="sec-pedidos" class="space-y-4 text-black">
@@ -403,7 +405,6 @@
             <div id="sec-cupons" class="hidden space-y-4 text-black"></div>
             <div id="sec-config" class="hidden space-y-4 text-black"></div>
             <div id="sec-promocoes" class="hidden space-y-4 text-black"></div>
-            <div id="sec-estabelecimentos" class="hidden space-y-4 text-black"></div>
         </div>
     </div>
 
@@ -465,9 +466,6 @@
 
         // Variáveis globais
         let PRODS = [], CATS = [], CARRINHO = [], CONFIG = {}, CUPONS = [], PROMOCAO = {};
-        let ESTABELECIMENTOS = [];
-        let ESTABELECIMENTO_ATUAL = null;
-        let ESTABELECIMENTO_ID = null;
         let curCat = 'todos';
         let dKM = 0, tFRETE = 0, latCli = 0, lngCli = 0, gpsOk = false, modoConsumo = 'delivery', vCUPOM = 0;
         let isAdmin = false;
@@ -489,7 +487,7 @@
             };
         }
 
-        // FUNÇÃO INIT MELHORADA PARA MULTI-ESTABELECIMENTOS
+        // FUNÇÃO INIT MELHORADA
         async function init() {
             try {
                 console.log("Iniciando aplicação de bebidas...");
@@ -502,28 +500,9 @@
                     return;
                 }
                 
-                // Verificar se há estabelecimento na URL
-                const estabelecimentoParam = params.get('estabelecimento');
-                if (estabelecimentoParam) {
-                    ESTABELECIMENTO_ID = estabelecimentoParam;
-                    localStorage.setItem('ultimo_estabelecimento', estabelecimentoParam);
-                } else {
-                    // Tentar recuperar estabelecimento do localStorage
-                    ESTABELECIMENTO_ID = localStorage.getItem('ultimo_estabelecimento');
-                }
-                
                 // Verificar se Firebase está pronto
                 const firebaseRefs = getFirebaseRefs();
                 console.log("Firebase pronto:", firebaseRefs.db ? "Sim" : "Não");
-                
-                // Se não há estabelecimento definido, mostrar seletor
-                if (!ESTABELECIMENTO_ID) {
-                    await mostrarSeletorEstabelecimentos();
-                    return;
-                }
-                
-                // Carregar estabelecimento
-                await carregarEstabelecimento(ESTABELECIMENTO_ID);
                 
                 // Carregar configuração da loja
                 await carregarConfiguracao();
@@ -552,91 +531,6 @@
             }
         }
 
-        // NOVA FUNÇÃO: Mostrar seletor de estabelecimentos
-        async function mostrarSeletorEstabelecimentos() {
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                
-                // Carregar estabelecimentos ativos
-                const estabelecimentosSnap = await firestore.getDocs(
-                    firestore.query(
-                        firestore.collection(db, "estabelecimentos"),
-                        firestore.where("ativo", "==", true)
-                    )
-                );
-                
-                ESTABELECIMENTOS = estabelecimentosSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                
-                if (ESTABELECIMENTOS.length === 0) {
-                    mostrarErroInicializacao("Nenhum estabelecimento disponível no momento.");
-                    return;
-                }
-                
-                // Mostrar seletor
-                document.getElementById('initial-loading').innerHTML = `
-                    <div class="text-center max-w-md">
-                        <div class="text-4xl mb-4">🏪</div>
-                        <h2 class="text-xl font-bebas text-blue-800 mb-4">ESCOLHA SEU ESTABELECIMENTO</h2>
-                        <div class="space-y-3 max-h-[60vh] overflow-y-auto">
-                            ${ESTABELECIMENTOS.map(est => `
-                                <button onclick="selecionarEstabelecimento('${est.id}')" 
-                                        class="w-full bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition text-left">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                            <i class="fas fa-store text-blue-600"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-bold text-gray-800">${est.nome}</div>
-                                            <div class="text-xs text-gray-500">${est.endereco || 'Delivery de Bebidas'}</div>
-                                        </div>
-                                    </div>
-                                </button>
-                            `).join('')}
-                        </div>
-                        <div class="mt-6 text-sm text-gray-500">
-                            Ou <button onclick="location.href='?estabelecimento=demo'" class="text-blue-600 underline">experimente a versão demo</button>
-                        </div>
-                    </div>`;
-                    
-            } catch (error) {
-                console.error("Erro ao carregar estabelecimentos:", error);
-                mostrarErroInicializacao("Erro ao carregar estabelecimentos.");
-            }
-        }
-
-        // NOVA FUNÇÃO: Selecionar estabelecimento
-        async function selecionarEstabelecimento(id) {
-            ESTABELECIMENTO_ID = id;
-            localStorage.setItem('ultimo_estabelecimento', id);
-            location.reload();
-        }
-
-        // NOVA FUNÇÃO: Carregar estabelecimento
-        async function carregarEstabelecimento(id) {
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                const docRef = firestore.doc(db, "estabelecimentos", id);
-                const snap = await firestore.getDoc(docRef);
-                
-                if (!snap.exists()) {
-                    throw new Error("Estabelecimento não encontrado");
-                }
-                
-                ESTABELECIMENTO_ATUAL = { id: snap.id, ...snap.data() };
-                console.log("Estabelecimento carregado:", ESTABELECIMENTO_ATUAL.nome);
-                
-            } catch (error) {
-                console.error("Erro ao carregar estabelecimento:", error);
-                // Se falhar, limpar e mostrar seletor
-                localStorage.removeItem('ultimo_estabelecimento');
-                await mostrarSeletorEstabelecimentos();
-                throw error;
-            }
-        }
-
         // FUNÇÃO PARA MOSTRAR ERRO DE INICIALIZAÇÃO
         function mostrarErroInicializacao(mensagem) {
             document.getElementById('initial-loading').innerHTML = `
@@ -652,41 +546,69 @@
         async function carregarConfiguracao() {
             try {
                 const { db, firestore } = getFirebaseRefs();
-                const docRef = firestore.doc(db, "configuracoes", ESTABELECIMENTO_ID);
+                const docRef = firestore.doc(db, "configuracoes", "loja");
                 const snap = await firestore.getDoc(docRef);
-                
                 if(snap.exists()) {
                     CONFIG = snap.data();
-                    document.getElementById('cli-nome').innerText = CONFIG.nome_loja || ESTABELECIMENTO_ATUAL?.nome || "BEBIDAS DELIVERY";
+                    document.getElementById('cli-nome').innerText = CONFIG.nome_loja || "BEBIDAS DELIVERY";
                     if(CONFIG.logo_url) {
                         document.getElementById('cli-logo').src = CONFIG.logo_url;
-                    } else if (ESTABELECIMENTO_ATUAL?.logo_url) {
-                        document.getElementById('cli-logo').src = ESTABELECIMENTO_ATUAL.logo_url;
                     }
                     updateStatusLojaUI();
                 } else {
                     // Configuração padrão para bebidas
                     CONFIG = {
-                        nome_loja: ESTABELECIMENTO_ATUAL?.nome || "BEBIDAS DELIVERY",
+                        nome_loja: "BEBIDAS DELIVERY",
                         loja_aberta: true,
                         taxa_base: 5,
                         preco_km: 2.0,
-                        whatsapp: ESTABELECIMENTO_ATUAL?.whatsapp || "5599999999999",
+                        whatsapp: "5599999999999",
                         pedido_minimo: 25,
-                        estabelecimento_id: ESTABELECIMENTO_ID
+                        admin_email: "admin@bebidas.com",
+                        admin_senha: "admin123"
                     };
                     // Criar configuração padrão se não existir
-                    await firestore.setDoc(firestore.doc(db, "configuracoes", ESTABELECIMENTO_ID), CONFIG);
+                    await firestore.setDoc(firestore.doc(db, "configuracoes", "loja"), CONFIG);
+                    
+                    // Criar usuário admin
+                    await criarUsuarioAdminPadrao();
                 }
             } catch (error) {
                 console.error("Erro ao carregar configuração:", error);
             }
         }
 
+        async function criarUsuarioAdminPadrao() {
+            try {
+                const { auth, authModules, db, firestore } = getFirebaseRefs();
+                
+                // Verificar se já existe um admin
+                const adminRef = firestore.doc(db, "usuarios", "admin");
+                const adminSnap = await firestore.getDoc(adminRef);
+                
+                if (!adminSnap.exists()) {
+                    // Criar usuário admin no Firebase Auth
+                    await authModules.createUserWithEmailAndPassword(auth, "admin@bebidas.com", "admin123");
+                    
+                    // Salvar no Firestore
+                    await firestore.setDoc(adminRef, {
+                        email: "admin@bebidas.com",
+                        nome: "Administrador",
+                        tipo: "admin",
+                        created_at: new Date().getTime()
+                    });
+                    
+                    console.log("Usuário admin criado com sucesso");
+                }
+            } catch (error) {
+                console.error("Erro ao criar usuário admin:", error);
+            }
+        }
+
         async function carregarPromocao() {
             try {
                 const { db, firestore } = getFirebaseRefs();
-                const docRef = firestore.doc(db, "promocoes", `dia_${ESTABELECIMENTO_ID}`);
+                const docRef = firestore.doc(db, "promocoes", "dia");
                 const snap = await firestore.getDoc(docRef);
                 if(snap.exists()) {
                     PROMOCAO = snap.data();
@@ -698,11 +620,10 @@
                         preco: 39.90,
                         preco_original: 49.90,
                         imagem_url: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&auto=format&fit=crop&q=80",
-                        ativa: true,
-                        estabelecimento_id: ESTABELECIMENTO_ID
+                        ativa: true
                     };
                     // Criar promoção padrão se não existir
-                    await firestore.setDoc(firestore.doc(db, "promocoes", `dia_${ESTABELECIMENTO_ID}`), PROMOCAO);
+                    await firestore.setDoc(firestore.doc(db, "promocoes", "dia"), PROMOCAO);
                 }
                 renderPromocaoCliente();
             } catch (error) {
@@ -810,22 +731,12 @@
             try {
                 const { db, firestore } = getFirebaseRefs();
                 
-                // Carregar categorias do estabelecimento
-                const catsSnap = await firestore.getDocs(
-                    firestore.query(
-                        firestore.collection(db, "categorias"),
-                        firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                    )
-                );
+                // Carregar categorias
+                const catsSnap = await firestore.getDocs(firestore.collection(db, "categorias"));
                 CATS = catsSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
-                // Carregar produtos do estabelecimento
-                const prodsSnap = await firestore.getDocs(
-                    firestore.query(
-                        firestore.collection(db, "produtos"),
-                        firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                    )
-                );
+                // Carregar produtos
+                const prodsSnap = await firestore.getDocs(firestore.collection(db, "produtos"));
                 PRODS = prodsSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
                 // Se não houver produtos, criar alguns padrão
@@ -833,12 +744,12 @@
                     // Criar categorias padrão se não existirem
                     if (CATS.length === 0) {
                         const categoriasPadrao = [
-                            { nome: "Refrigerantes", ordem: 1, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID },
-                            { nome: "Cervejas", ordem: 2, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID },
-                            { nome: "Sucos", ordem: 3, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID },
-                            { nome: "Águas", ordem: 4, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID },
-                            { nome: "Energéticos", ordem: 5, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID },
-                            { nome: "Combos", ordem: 6, tipo: 'categoria', estabelecimento_id: ESTABELECIMENTO_ID }
+                            { nome: "Refrigerantes", ordem: 1, tipo: 'categoria' },
+                            { nome: "Cervejas", ordem: 2, tipo: 'categoria' },
+                            { nome: "Sucos", ordem: 3, tipo: 'categoria' },
+                            { nome: "Águas", ordem: 4, tipo: 'categoria' },
+                            { nome: "Energéticos", ordem: 5, tipo: 'categoria' },
+                            { nome: "Combos", ordem: 6, tipo: 'categoria' }
                         ];
                         
                         for (const cat of categoriasPadrao) {
@@ -846,12 +757,7 @@
                         }
                         
                         // Recarregar categorias
-                        const catsSnap2 = await firestore.getDocs(
-                            firestore.query(
-                                firestore.collection(db, "categorias"),
-                                firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                            )
-                        );
+                        const catsSnap2 = await firestore.getDocs(firestore.collection(db, "categorias"));
                         CATS = catsSnap2.docs.map(d => ({id: d.id, ...d.data()}));
                     }
                     
@@ -864,31 +770,31 @@
                     
                     const produtosPadrao = [
                         // Refrigerantes
-                        { nome: "Coca-Cola 2L", descricao: "Refrigerante", preco: 12.90, categoria_id: refrigerantesCat?.id, imagem_url: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Guaraná Antarctica 2L", descricao: "Refrigerante", preco: 10.90, categoria_id: refrigerantesCat?.id, imagem_url: "https://images.unsplash.com/photo-1603561596112-1d5b2c7b2a5d?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Fanta Laranja 2L", descricao: "Refrigerante", preco: 9.90, categoria_id: refrigerantesCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Sprite 2L", descricao: "Refrigerante", preco: 9.90, categoria_id: refrigerantesCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Coca-Cola 2L", descricao: "Refrigerante", preco: 12.90, categoria_id: refrigerantesCat?.id, imagem_url: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400", disponivel: true },
+                        { nome: "Guaraná Antarctica 2L", descricao: "Refrigerante", preco: 10.90, categoria_id: refrigerantesCat?.id, imagem_url: "https://images.unsplash.com/photo-1603561596112-1d5b2c7b2a5d?w=400", disponivel: true },
+                        { nome: "Fanta Laranja 2L", descricao: "Refrigerante", preco: 9.90, categoria_id: refrigerantesCat?.id, imagem_url: "", disponivel: true },
+                        { nome: "Sprite 2L", descricao: "Refrigerante", preco: 9.90, categoria_id: refrigerantesCat?.id, imagem_url: "", disponivel: true },
                         
                         // Cervejas
-                        { nome: "Heineken 600ml", descricao: "Cerveja long neck", preco: 12.90, categoria_id: cervejasCat?.id, imagem_url: "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Brahma 600ml", descricao: "Cerveja long neck", preco: 8.90, categoria_id: cervejasCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Skol 600ml", descricao: "Cerveja long neck", preco: 8.90, categoria_id: cervejasCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Heineken 600ml", descricao: "Cerveja long neck", preco: 12.90, categoria_id: cervejasCat?.id, imagem_url: "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?w=400", disponivel: true },
+                        { nome: "Brahma 600ml", descricao: "Cerveja long neck", preco: 8.90, categoria_id: cervejasCat?.id, imagem_url: "", disponivel: true },
+                        { nome: "Skol 600ml", descricao: "Cerveja long neck", preco: 8.90, categoria_id: cervejasCat?.id, imagem_url: "", disponivel: true },
                         
                         // Sucos
-                        { nome: "Suco de Laranja 1L", descricao: "Natural", preco: 15.90, categoria_id: sucosCat?.id, imagem_url: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Suco de Uva 1L", descricao: "Integral", preco: 18.90, categoria_id: sucosCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Suco de Laranja 1L", descricao: "Natural", preco: 15.90, categoria_id: sucosCat?.id, imagem_url: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w-400", disponivel: true },
+                        { nome: "Suco de Uva 1L", descricao: "Integral", preco: 18.90, categoria_id: sucosCat?.id, imagem_url: "", disponivel: true },
                         
                         // Águas
-                        { nome: "Água Mineral 1,5L", descricao: "Sem gás", preco: 4.90, categoria_id: aguasCat?.id, imagem_url: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Água com Gás 1,5L", descricao: "Com gás", preco: 5.90, categoria_id: aguasCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Água Mineral 1,5L", descricao: "Sem gás", preco: 4.90, categoria_id: aguasCat?.id, imagem_url: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400", disponivel: true },
+                        { nome: "Água com Gás 1,5L", descricao: "Com gás", preco: 5.90, categoria_id: aguasCat?.id, imagem_url: "", disponivel: true },
                         
                         // Energéticos
-                        { nome: "Red Bull 250ml", descricao: "Energético", preco: 14.90, categoria_id: energeticosCat?.id, imagem_url: "https://images.unsplash.com/photo-1596574202430-6d4ffa1c7144?w=400", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Monster 473ml", descricao: "Energético", preco: 12.90, categoria_id: energeticosCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Red Bull 250ml", descricao: "Energético", preco: 14.90, categoria_id: energeticosCat?.id, imagem_url: "https://images.unsplash.com/photo-1596574202430-6d4ffa1c7144?w=400", disponivel: true },
+                        { nome: "Monster 473ml", descricao: "Energético", preco: 12.90, categoria_id: energeticosCat?.id, imagem_url: "", disponivel: true },
                         
                         // Combos
-                        { nome: "Combo Churrasco", descricao: "6 Cervejas + 2 Refris 2L", preco: 79.90, categoria_id: combosCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
-                        { nome: "Combo Festa", descricao: "12 Cervejas + 4 Refris 2L", preco: 149.90, categoria_id: combosCat?.id, imagem_url: "", disponivel: true, estabelecimento_id: ESTABELECIMENTO_ID },
+                        { nome: "Combo Churrasco", descricao: "6 Cervejas + 2 Refris 2L", preco: 79.90, categoria_id: combosCat?.id, imagem_url: "", disponivel: true },
+                        { nome: "Combo Festa", descricao: "12 Cervejas + 4 Refris 2L", preco: 149.90, categoria_id: combosCat?.id, imagem_url: "", disponivel: true },
                     ];
                     
                     for (const prod of produtosPadrao) {
@@ -896,22 +802,12 @@
                     }
                     
                     // Recarregar produtos
-                    const prodsSnap2 = await firestore.getDocs(
-                        firestore.query(
-                            firestore.collection(db, "produtos"),
-                            firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                        )
-                    );
+                    const prodsSnap2 = await firestore.getDocs(firestore.collection(db, "produtos"));
                     PRODS = prodsSnap2.docs.map(d => ({id: d.id, ...d.data()}));
                 }
                 
-                // Carregar cupons do estabelecimento
-                const cuponsSnap = await firestore.getDocs(
-                    firestore.query(
-                        firestore.collection(db, "cupons"),
-                        firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                    )
-                );
+                // Carregar cupons
+                const cuponsSnap = await firestore.getDocs(firestore.collection(db, "cupons"));
                 CUPONS = cuponsSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
                 // Ordenar categorias
@@ -926,7 +822,7 @@
             }
         }
 
-        // CORREÇÃO: Função listenPedidos melhorada para multi-estabelecimento
+        // CORREÇÃO: Função listenPedidos melhorada
         function listenPedidos() {
             try {
                 const { db, firestore } = getFirebaseRefs();
@@ -939,7 +835,6 @@
                 
                 const q = firestore.query(
                     firestore.collection(db, "pedidos"), 
-                    firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID),
                     firestore.orderBy("created_at", "desc"), 
                     firestore.limit(100)
                 );
@@ -1347,8 +1242,7 @@
             try {
                 const carrinhoData = {
                     itens: CARRINHO.map(item => ({id: item.id, nome: item.nome, preco: item.preco})),
-                    timestamp: new Date().getTime(),
-                    estabelecimento_id: ESTABELECIMENTO_ID
+                    timestamp: new Date().getTime()
                 };
                 localStorage.setItem('bebidas_carrinho', JSON.stringify(carrinhoData));
             } catch (e) {
@@ -1358,13 +1252,13 @@
 
         function carregarDadosLocal() {
             try {
-                // Carregar carrinho salvo apenas se for do mesmo estabelecimento
+                // Carregar carrinho salvo
                 const carrinhoSalvo = localStorage.getItem('bebidas_carrinho');
                 if (carrinhoSalvo) {
                     const data = JSON.parse(carrinhoSalvo);
                     const umaHoraAtras = new Date().getTime() - (60 * 60 * 1000);
                     
-                    if (data.timestamp > umaHoraAtras && data.estabelecimento_id === ESTABELECIMENTO_ID) {
+                    if (data.timestamp > umaHoraAtras) {
                         data.itens.forEach(item => {
                             const produto = PRODS.find(p => p.id === item.id);
                             if (produto && produto.disponivel !== false) {
@@ -1437,6 +1331,7 @@
             
             // Listar itens do carrinho
             renderCheckoutItens();
+            setModoConsumo(modoConsumo);
             renderCheckoutTotal();
         }
 
@@ -1477,11 +1372,42 @@
             document.getElementById('modal-checkout').classList.add('hidden');
         }
 
+        function setModoConsumo(m) {
+            modoConsumo = m;
+            const botoes = ['delivery', 'retirada'];
+            
+            botoes.forEach(x => {
+                const btn = document.getElementById(`btn-m-${x}`);
+                if (btn) {
+                    if (x === m) {
+                        btn.className = "p-3 text-[9px] font-black rounded-xl bg-white shadow-sm border border-blue-200 text-black uppercase";
+                    } else {
+                        btn.className = "p-3 text-[9px] font-black rounded-xl text-gray-400 uppercase";
+                    }
+                }
+            });
+            
+            const areaGPS = document.getElementById('area-gps-cli');
+            if (areaGPS) {
+                areaGPS.classList.toggle('hidden', m !== 'delivery');
+            }
+            
+            if (m !== 'delivery') {
+                tFRETE = 0;
+                gpsOk = true;
+                document.getElementById('res-km').classList.add('hidden');
+            } else {
+                gpsOk = false;
+            }
+            
+            renderCheckoutTotal();
+        }
+
         function renderCheckoutTotal() {
             const sub = CARRINHO.reduce((a, b) => a + Number(b.preco || 0), 0);
             
             // CORREÇÃO: Se modo delivery mas não calculou frete, mostrar 0
-            const frete = gpsOk ? tFRETE : 0;
+            const frete = (modoConsumo === 'delivery' && gpsOk) ? tFRETE : 0;
             
             // CORREÇÃO: REMOVER DESCONTO AUTOMÁTICO DO PIX
             // Apenas aplicar desconto do cupom, sem desconto automático
@@ -1582,8 +1508,8 @@
             const totalStr = document.getElementById('res-total').innerText;
             
             // Validações
-            if (!gpsOk) {
-                alert("📍 É necessário calcular o frete pelo GPS!");
+            if (modoConsumo === 'delivery' && !gpsOk) {
+                alert("📍 É necessário calcular o frete pelo GPS para delivery!");
                 return;
             }
             
@@ -1600,13 +1526,15 @@
                 return;
             }
             
-            // Verificar endereço
-            const rua = document.getElementById('f-rua').value.trim();
-            const bairro = document.getElementById('f-bairro').value.trim();
-            
-            if (!rua || !bairro) {
-                alert("Preencha o endereço completo!");
-                return;
+            // Verificar endereço para delivery
+            if (modoConsumo === 'delivery') {
+                const rua = document.getElementById('f-rua').value.trim();
+                const bairro = document.getElementById('f-bairro').value.trim();
+                
+                if (!rua || !bairro) {
+                    alert("Para delivery, preencha o endereço completo!");
+                    return;
+                }
             }
             
             // Verificar pedido mínimo
@@ -1630,7 +1558,7 @@
             const pedido = {
                 cliente_nome: nome,
                 cliente_whatsapp: whatsapp,
-                rua: document.getElementById('f-rua').value.trim(),
+                rua: modoConsumo === 'delivery' ? document.getElementById('f-rua').value.trim() : modoConsumo.toUpperCase(),
                 numero: document.getElementById('f-num').value || "S/N",
                 bairro: document.getElementById('f-bairro').value || "",
                 complemento: document.getElementById('f-comp').value || "",
@@ -1645,10 +1573,8 @@
                 lat_cli: latCli,
                 lng_cli: lngCli,
                 desconto: vCUPOM,
-                modo_consumo: 'delivery',
-                tipo: 'bebidas',
-                estabelecimento_id: ESTABELECIMENTO_ID,
-                estabelecimento_nome: CONFIG.nome_loja || ESTABELECIMENTO_ATUAL?.nome
+                modo_consumo: modoConsumo,
+                tipo: 'bebidas'
             };
             
             try {
@@ -1670,13 +1596,14 @@
                 }
                 
                 const url = `${window.location.origin}${window.location.pathname}?pedido=${docRef.id}`;
-                const maps = `\n📍 *Mapa:* https://www.google.com/maps?q=${latCli},${lngCli}`;
+                const maps = modoConsumo === 'delivery' ? `\n📍 *Mapa:* https://www.google.com/maps?q=${latCli},${lngCli}` : "";
                 
                 const msg = `*🥤 NOVO PEDIDO - ${CONFIG.nome_loja || 'Bebidas Delivery'}*\n` +
                            `═══════════════════════════\n` +
                            `*Cliente:* ${nome}\n` +
                            `*WhatsApp:* ${whatsapp}\n` +
-                           `*Endereço:* ${pedido.rua}, ${pedido.numero} - ${pedido.bairro}\n` +
+                           `*Modo:* ${modoConsumo.toUpperCase()}\n` +
+                           (modoConsumo === 'delivery' ? `*Endereço:* ${pedido.rua}, ${pedido.numero} - ${pedido.bairro}\n` : "") +
                            (pedido.complemento ? `*Complemento:* ${pedido.complemento}\n` : "") +
                            `═══════════════════════════\n` +
                            `*ITENS DO PEDIDO:*\n${itensTxt}\n` +
@@ -1744,7 +1671,7 @@
             }
             
             try {
-                const { auth, authModules, db, firestore } = getFirebaseRefs();
+                const { auth, authModules } = getFirebaseRefs();
                 
                 const btn = document.querySelector('#view-login button');
                 const originalText = btn.textContent;
@@ -1754,31 +1681,22 @@
                 const userCredential = await authModules.signInWithEmailAndPassword(auth, email, senha);
                 currentUser = userCredential.user;
                 
-                // Verificar se é admin do estabelecimento atual
-                const userDoc = await firestore.getDoc(firestore.doc(db, "usuarios", currentUser.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    if (userData.estabelecimento_id === ESTABELECIMENTO_ID || userData.tipo === 'superadmin') {
-                        isAdmin = true;
-                        fecharLogin();
-                        document.getElementById('view-cliente').classList.add('hidden');
-                        document.getElementById('view-admin').classList.remove('hidden');
-                        document.getElementById('admin-user').innerText = currentUser.email;
-                        
-                        switchTab('pedidos');
-                        document.getElementById('login-email').value = '';
-                        document.getElementById('login-pass').value = '';
-                        
-                        // Forçar atualização dos pedidos ao entrar no ADM
-                        setTimeout(() => {
-                            listenPedidos();
-                        }, 500);
-                    } else {
-                        throw new Error("Acesso não autorizado para este estabelecimento");
-                    }
-                } else {
-                    throw new Error("Usuário não encontrado");
-                }
+                // Verificar se é admin
+                isAdmin = true;
+                
+                fecharLogin();
+                document.getElementById('view-cliente').classList.add('hidden');
+                document.getElementById('view-admin').classList.remove('hidden');
+                document.getElementById('admin-user').innerText = currentUser.email;
+                
+                switchTab('pedidos');
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-pass').value = '';
+                
+                // Forçar atualização dos pedidos ao entrar no ADM
+                setTimeout(() => {
+                    listenPedidos();
+                }, 500);
                 
             } catch (error) {
                 console.error("Erro no login:", error);
@@ -1800,8 +1718,6 @@
                     case 'auth/too-many-requests':
                         mensagem = "Muitas tentativas. Tente mais tarde!";
                         break;
-                    default:
-                        mensagem = error.message || "Erro desconhecido";
                 }
                 
                 errorDiv.textContent = mensagem;
@@ -1846,7 +1762,7 @@
 
         function switchTab(tab) {
             // Atualizar botões das tabs
-            ['pedidos', 'produtos', 'categorias', 'cupons', 'config', 'promocoes', 'estabelecimentos'].forEach(t => {
+            ['pedidos', 'produtos', 'categorias', 'cupons', 'config', 'promocoes'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 if (btn) {
                     if (t === tab) {
@@ -1858,7 +1774,7 @@
             });
             
             // Atualizar conteúdo
-            ['pedidos', 'produtos', 'categorias', 'cupons', 'config', 'promocoes', 'estabelecimentos'].forEach(t => {
+            ['pedidos', 'produtos', 'categorias', 'cupons', 'config', 'promocoes'].forEach(t => {
                 const sec = document.getElementById(`sec-${t}`);
                 if (sec) {
                     if (t === tab) {
@@ -1880,8 +1796,6 @@
                 renderConfigADM();
             } else if (tab === 'promocoes') {
                 renderPromocoesADM();
-            } else if (tab === 'estabelecimentos') {
-                renderEstabelecimentosADM();
             }
         }
 
@@ -2069,7 +1983,7 @@
                         <div style="margin-bottom: 10px;">
                             <div><strong>Cliente:</strong> ${pedido.cliente_nome || '-'}</div>
                             <div><strong>WhatsApp:</strong> ${pedido.cliente_whatsapp || '-'}</div>
-                            <div><strong>Endereço:</strong> ${pedido.rua || ''}, ${pedido.numero || ''} - ${pedido.bairro || ''}</div>
+                            ${pedido.modo_consumo === 'delivery' ? `<div><strong>Endereço:</strong> ${pedido.rua || ''}, ${pedido.numero || ''} - ${pedido.bairro || ''}</div>` : ''}
                             <div><strong>Status:</strong> ${pedido.status || 'Novo'}</div>
                             <div><strong>Pagamento:</strong> ${pedido.pagamento || '-'}</div>
                             ${pedido.troco && pedido.troco !== 'Não solicitado' ? `<div><strong>Troco para:</strong> R$ ${pedido.troco}</div>` : ''}
@@ -2340,8 +2254,7 @@
                     preco: 0.00,
                     categoria_id: CATS[0]?.id || "",
                     imagem_url: "",
-                    disponivel: true,
-                    estabelecimento_id: ESTABELECIMENTO_ID
+                    disponivel: true
                 };
                 
                 const docRef = await firestore.addDoc(firestore.collection(db, "produtos"), novoProd);
@@ -2513,8 +2426,7 @@
                 const novaCat = {
                     nome: nome,
                     tipo: 'categoria',
-                    ordem: CATS.length + 1,
-                    estabelecimento_id: ESTABELECIMENTO_ID
+                    ordem: CATS.length + 1
                 };
                 
                 await firestore.addDoc(firestore.collection(db, "categorias"), novaCat);
@@ -2648,7 +2560,6 @@
                     max_usos: maxUsos,
                     usos: 0,
                     ativo: true,
-                    estabelecimento_id: ESTABELECIMENTO_ID,
                     created_at: new Date().getTime()
                 };
                 
@@ -2656,12 +2567,7 @@
                 alert("Cupom criado!");
                 
                 // Recarregar cupons
-                const cuponsSnap = await firestore.getDocs(
-                    firestore.query(
-                        firestore.collection(db, "cupons"),
-                        firestore.where("estabelecimento_id", "==", ESTABELECIMENTO_ID)
-                    )
-                );
+                const cuponsSnap = await firestore.getDocs(firestore.collection(db, "cupons"));
                 CUPONS = cuponsSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
                 renderCuponsADM();
@@ -2922,11 +2828,10 @@
                     preco_km: parseFloat(document.getElementById('cfg-preco-km').value) || 2.0,
                     lat_loja: parseFloat(document.getElementById('cfg-lat').value) || null,
                     lng_loja: parseFloat(document.getElementById('cfg-lng').value) || null,
-                    loja_aberta: document.getElementById('cfg-aberta').checked,
-                    estabelecimento_id: ESTABELECIMENTO_ID
+                    loja_aberta: document.getElementById('cfg-aberta').checked
                 };
                 
-                const configRef = firestore.doc(db, "configuracoes", ESTABELECIMENTO_ID);
+                const configRef = firestore.doc(db, "configuracoes", "loja");
                 await firestore.setDoc(configRef, configAtualizada);
                 
                 CONFIG = configAtualizada;
@@ -3009,7 +2914,7 @@
         async function abrirEditarPromocao() {
             try {
                 const { db, firestore } = getFirebaseRefs();
-                const docRef = firestore.doc(db, "promocoes", `dia_${ESTABELECIMENTO_ID}`);
+                const docRef = firestore.doc(db, "promocoes", "dia");
                 const snap = await firestore.getDoc(docRef);
                 
                 if (!snap.exists()) {
@@ -3064,7 +2969,7 @@
         async function toggleStatusPromocao(novoStatus) {
             try {
                 const { db, firestore } = getFirebaseRefs();
-                const promocaoRef = firestore.doc(db, "promocoes", `dia_${ESTABELECIMENTO_ID}`);
+                const promocaoRef = firestore.doc(db, "promocoes", "dia");
                 await firestore.updateDoc(promocaoRef, {
                     ativa: novoStatus,
                     updated_at: new Date().getTime()
@@ -3079,174 +2984,6 @@
             } catch (error) {
                 console.error("Erro ao alternar status da promoção:", error);
                 alert("Erro ao alterar status!");
-            }
-        }
-
-        // NOVA FUNÇÃO: Gerenciamento de estabelecimentos
-        async function renderEstabelecimentosADM() {
-            const sec = document.getElementById('sec-estabelecimentos');
-            if (!sec) return;
-            
-            try {
-                // Verificar se é superadmin
-                const { db, firestore } = getFirebaseRefs();
-                const userDoc = await firestore.getDoc(firestore.doc(db, "usuarios", currentUser.uid));
-                
-                if (!userDoc.exists() || userDoc.data().tipo !== 'superadmin') {
-                    sec.innerHTML = `
-                        <div class="bg-red-50 text-red-600 p-6 rounded-[35px] text-center">
-                            <i class="fas fa-lock text-2xl mb-3"></i>
-                            <h3 class="font-bold mb-2">Acesso Restrito</h3>
-                            <p class="text-sm">Apenas superadministradores podem gerenciar estabelecimentos.</p>
-                        </div>`;
-                    return;
-                }
-                
-                // Carregar estabelecimentos
-                const estabelecimentosSnap = await firestore.getDocs(firestore.collection(db, "estabelecimentos"));
-                ESTABELECIMENTOS = estabelecimentosSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                
-                let html = `
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bebas text-xl text-gray-800">Estabelecimentos</h3>
-                        <button onclick="novoEstabelecimento()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-700 transition">+ Novo Estabelecimento</button>
-                    </div>`;
-                
-                if (ESTABELECIMENTOS.length === 0) {
-                    html += `<div class="bg-white p-8 rounded-[35px] shadow-sm text-center text-gray-500">Nenhum estabelecimento cadastrado</div>`;
-                } else {
-                    ESTABELECIMENTOS.forEach(est => {
-                        html += `
-                        <div class="bg-white p-4 rounded-[25px] shadow-sm mb-3">
-                            <div class="flex justify-between items-center">
-                                <div class="flex-1">
-                                    <div class="font-black text-[11px] uppercase text-gray-800">${est.nome}</div>
-                                    <div class="text-[9px] text-gray-400">
-                                        WhatsApp: ${est.whatsapp || 'Não informado'} • 
-                                        ${est.ativo !== false ? '✅ Ativo' : '❌ Inativo'} •
-                                        ID: ${est.id}
-                                    </div>
-                                    <div class="text-[8px] text-gray-500 mt-1">${est.endereco || 'Endereço não informado'}</div>
-                                </div>
-                                <div class="flex gap-1">
-                                    <button onclick="editarEstabelecimento('${est.id}')" class="bg-blue-100 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition"><i class="fas fa-edit text-xs"></i></button>
-                                    <button onclick="toggleEstabelecimento('${est.id}', ${est.ativo !== false})" class="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200 transition">
-                                        <i class="fas ${est.ativo !== false ? 'fa-toggle-on text-green-500' : 'fa-toggle-off text-gray-400'}"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-                
-                sec.innerHTML = html;
-            } catch (error) {
-                console.error("Erro ao renderizar estabelecimentos:", error);
-                sec.innerHTML = `<div class="bg-red-50 text-red-600 p-4 rounded-xl">Erro ao carregar estabelecimentos: ${error.message}</div>`;
-            }
-        }
-
-        async function novoEstabelecimento() {
-            try {
-                const nome = prompt("Nome do estabelecimento:");
-                if (!nome) return;
-                
-                const whatsapp = prompt("WhatsApp do estabelecimento (55DDDNUMERO):");
-                if (!whatsapp) return;
-                
-                const endereco = prompt("Endereço (opcional):");
-                
-                const { db, firestore, auth, authModules } = getFirebaseRefs();
-                
-                // Criar estabelecimento
-                const novoEst = {
-                    nome: nome,
-                    whatsapp: whatsapp,
-                    endereco: endereco || "",
-                    ativo: true,
-                    created_at: new Date().getTime()
-                };
-                
-                const docRef = await firestore.addDoc(firestore.collection(db, "estabelecimentos"), novoEst);
-                const estabelecimentoId = docRef.id;
-                
-                // Criar usuário admin para o estabelecimento
-                const adminEmail = prompt("Email do administrador:");
-                const adminSenha = prompt("Senha do administrador:");
-                
-                if (adminEmail && adminSenha) {
-                    const userCredential = await authModules.createUserWithEmailAndPassword(auth, adminEmail, adminSenha);
-                    
-                    // Salvar usuário no Firestore
-                    await firestore.setDoc(firestore.doc(db, "usuarios", userCredential.user.uid), {
-                        email: adminEmail,
-                        nome: "Administrador",
-                        tipo: "admin",
-                        estabelecimento_id: estabelecimentoId,
-                        created_at: new Date().getTime()
-                    });
-                }
-                
-                alert(`Estabelecimento criado com sucesso!\nID: ${estabelecimentoId}\nLink: ${window.location.origin}${window.location.pathname}?estabelecimento=${estabelecimentoId}`);
-                
-                renderEstabelecimentosADM();
-            } catch (error) {
-                console.error("Erro ao criar estabelecimento:", error);
-                alert("Erro ao criar estabelecimento: " + error.message);
-            }
-        }
-
-        async function editarEstabelecimento(id) {
-            try {
-                const est = ESTABELECIMENTOS.find(e => e.id === id);
-                if (!est) return;
-                
-                const novoNome = prompt("Novo nome:", est.nome);
-                if (!novoNome) return;
-                
-                const novoWhatsapp = prompt("Novo WhatsApp:", est.whatsapp);
-                if (!novoWhatsapp) return;
-                
-                const novoEndereco = prompt("Novo endereço:", est.endereco || "");
-                
-                const { db, firestore } = getFirebaseRefs();
-                const estRef = firestore.doc(db, "estabelecimentos", id);
-                
-                await firestore.updateDoc(estRef, {
-                    nome: novoNome,
-                    whatsapp: novoWhatsapp,
-                    endereco: novoEndereco || ""
-                });
-                
-                alert("Estabelecimento atualizado!");
-                renderEstabelecimentosADM();
-            } catch (error) {
-                console.error("Erro ao editar estabelecimento:", error);
-                alert("Erro ao editar estabelecimento!");
-            }
-        }
-
-        async function toggleEstabelecimento(id, atual) {
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                const estRef = firestore.doc(db, "estabelecimentos", id);
-                await firestore.updateDoc(estRef, {
-                    ativo: !atual
-                });
-                
-                // Atualizar lista local
-                const est = ESTABELECIMENTOS.find(e => e.id === id);
-                if (est) {
-                    est.ativo = !atual;
-                }
-                
-                renderEstabelecimentosADM();
-            } catch (error) {
-                console.error("Erro ao alternar estabelecimento:", error);
-                alert("Erro ao alterar estabelecimento!");
             }
         }
 
@@ -3289,6 +3026,7 @@
         window.enviarPedido = enviarPedido;
         window.renderFiltros = renderFiltros;
         window.fecharCheckout = fecharCheckout;
+        window.setModoConsumo = setModoConsumo;
         window.abrirCheckout = abrirCheckout;
         window.carregarAcompanhamento = carregarAcompanhamento;
         window.updateStatusLojaUI = updateStatusLojaUI;
@@ -3298,7 +3036,6 @@
         window.abrirDetalhesProduto = abrirDetalhesProduto;
         window.fecharDetalhesProduto = fecharDetalhesProduto;
         window.removeCartCheckout = removeCartCheckout;
-        window.selecionarEstabelecimento = selecionarEstabelecimento;
 
         // Funções do painel ADM
         window.switchTab = switchTab;
@@ -3323,9 +3060,6 @@
         window.toggleStatusPromocao = toggleStatusPromocao;
         window.obterLocalizacaoLoja = obterLocalizacaoLoja;
         window.obterEnderecoDasCoordenadas = obterEnderecoDasCoordenadas;
-        window.novoEstabelecimento = novoEstabelecimento;
-        window.editarEstabelecimento = editarEstabelecimento;
-        window.toggleEstabelecimento = toggleEstabelecimento;
 
         // Expor a função init para ser chamada pelo Firebase
         window.initApp = init;
