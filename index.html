@@ -251,6 +251,192 @@
             border-radius: 10px;
             font-weight: bold;
         }
+
+        /* Modal de seleção de vasilhame */
+        .vasilhame-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(5px);
+        }
+
+        .vasilhame-content {
+            background: white;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .vasilhame-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .vasilhame-header h3 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.8rem;
+            margin: 0;
+        }
+
+        .vasilhame-body {
+            padding: 30px 20px;
+        }
+
+        .vasilhame-option {
+            background: #f0f9ff;
+            border: 2px solid #e0f2fe;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .vasilhame-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .vasilhame-option:active {
+            transform: translateY(0);
+        }
+
+        .vasilhame-option.possui {
+            background: #f0fdf4;
+            border-color: #10b981;
+        }
+
+        .vasilhame-option.incluso {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .vasilhame-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .vasilhame-price {
+            font-size: 1.2rem;
+            font-weight: 900;
+            margin-top: 5px;
+        }
+
+        .vasilhame-desc {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .vasilhame-footer {
+            padding: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .vasilhame-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 15px;
+            margin-left: 5px;
+            font-weight: 900;
+        }
+
+        /* Indicador visual no produto */
+        .cerveja-indicator {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 900;
+        }
+
+        /* Animações para toast */
+        @keyframes slideIn {
+            from {
+                top: -100px;
+                opacity: 0;
+            }
+            to {
+                top: 20px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                top: 20px;
+                opacity: 1;
+            }
+            to {
+                top: -100px;
+                opacity: 0;
+            }
+        }
+        
+        /* Estilo para o controle de quantidade no modal */
+        #total-container {
+            transition: all 0.3s;
+        }
+        
+        #total-container:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Animação de jogar para o carrinho */
+        @keyframes flyToCart {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(0.5) translate(var(--tx), var(--ty));
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0.1) translate(var(--tx-end), var(--ty-end));
+                opacity: 0;
+            }
+        }
+
+        .fly-to-cart {
+            position: fixed;
+            z-index: 10000;
+            pointer-events: none;
+            animation: flyToCart 0.8s ease-in-out forwards;
+        }
+
+        /* Efeito de tremor no carrinho */
+        @keyframes cartShake {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+
+        .cart-shake {
+            animation: cartShake 0.5s ease;
+        }
     </style>
 </head>
 <body class="flex justify-center">
@@ -330,11 +516,6 @@
         <div class="bg-white w-full max-w-md rounded-t-[45px] p-7 space-y-4 max-h-[94vh] overflow-y-auto shadow-2xl text-black">
             <div class="flex justify-between items-center font-bebas uppercase text-xl text-blue-600"><h2>Finalizar Pedido</h2><button onclick="fecharCheckout()" class="text-2xl text-gray-300">✕</button></div>
             
-            <div class="grid grid-cols-2 gap-2 p-1 bg-blue-50 rounded-2xl">
-                <button onclick="setModoConsumo('delivery')" id="btn-m-delivery" class="p-3 text-[9px] font-black rounded-xl bg-white shadow-sm border border-blue-200 text-black uppercase">Delivery</button>
-                <button onclick="setModoConsumo('retirada')" id="btn-m-retirada" class="p-3 text-[9px] font-black rounded-xl text-gray-400 uppercase">Retirada</button>
-            </div>
-
             <div id="checkout-itens-list" class="bg-blue-50 p-4 rounded-3xl border border-blue-100 space-y-2 text-[10px] font-bold text-gray-600 italic">
                 <!-- Itens do carrinho serão listados aqui -->
             </div>
@@ -467,7 +648,7 @@
         // Variáveis globais
         let PRODS = [], CATS = [], CARRINHO = [], CONFIG = {}, CUPONS = [], PROMOCAO = {};
         let curCat = 'todos';
-        let dKM = 0, tFRETE = 0, latCli = 0, lngCli = 0, gpsOk = false, modoConsumo = 'delivery', vCUPOM = 0;
+        let dKM = 0, tFRETE = 0, latCli = 0, lngCli = 0, gpsOk = false, vCUPOM = 0;
         let isAdmin = false;
         let pedidosListenerUnsubscribe = null;
         let currentUser = null;
@@ -710,6 +891,11 @@
                 imagem_url: PROMOCAO.imagem_url || ""
             });
             
+            // Animação de jogar para o carrinho
+            if (event && event.target) {
+                animarParaCarrinho(event.target, 1);
+            }
+            
             updateCartFooter();
             
             // Feedback visual
@@ -724,7 +910,31 @@
                 }, 1000);
             }
             
-            alert(`Promoção adicionada ao carrinho! R$ ${Number(PROMOCAO.preco || 39.90).toFixed(2).replace('.',',')}`);
+            // Feedback toast mais sutil
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #10b981;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 15px;
+                font-weight: bold;
+                z-index: 1000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s, slideOut 0.3s 1.5s forwards;
+                font-size: 12px;
+            `;
+            toast.innerHTML = `✅ ${PROMOCAO.titulo} adicionada!<br><small>R$ ${Number(PROMOCAO.preco || 39.90).toFixed(2).replace('.',',')}</small>`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 2000);
         }
 
         async function loadData() {
@@ -1044,12 +1254,25 @@
                                    categoria?.nome === "Combos" ? "bg-green-100 text-green-700" :
                                    "bg-gray-100 text-gray-700";
                 
+                // Verificar se tem imagem
+                const temImagem = p.imagem_url && p.imagem_url.trim() !== '';
+                
+                // Verificar se é cerveja
+                const isCerveja = categoria?.nome?.toLowerCase().includes('cerveja');
+                
                 html += `
                 <div class="product-card clickable" onclick="abrirDetalhesProduto('${p.id}')">
+                    ${isCerveja ? '<div class="cerveja-indicator">🍺 Cerveja</div>' : ''}
                     <div class="product-image-container">
-                        <img src="${p.imagem_url || 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop'}" 
+                        ${temImagem ? `
+                        <img src="${p.imagem_url}" 
                              class="product-image"
                              onerror="this.src='https://cdn-icons-png.flaticon.com/512/3075/3075977.png'">
+                        ` : `
+                        <div class="text-blue-400 text-4xl">
+                            <i class="fas fa-wine-bottle"></i>
+                        </div>
+                        `}
                         <div class="product-badge">${categoria?.nome || 'Bebida'}</div>
                     </div>
                     <div class="p-3">
@@ -1057,8 +1280,15 @@
                         <p class="text-xs text-gray-400 mb-2 line-clamp-1">${p.descricao || ''}</p>
                         <div class="flex justify-between items-center">
                             <span class="text-blue-600 font-black text-lg">R$ ${Number(p.preco || 0).toFixed(2).replace('.',',')}</span>
+                            ${isCerveja ? `
+                            <button onclick="event.stopPropagation(); abrirModalVasilhameComQuantidade('${p.id}')" 
+                                    class="bg-amber-500 text-white w-8 h-8 rounded-xl font-black text-xl shadow active:scale-95 transition hover:bg-amber-600">
+                                    🍺</button>
+                            ` : `
                             <button onclick="event.stopPropagation(); addCart('${p.id}')" 
-                                    class="bg-blue-500 text-white w-8 h-8 rounded-xl font-black text-xl shadow active:scale-95 transition hover:bg-blue-600">+</button>
+                                    class="bg-blue-500 text-white w-8 h-8 rounded-xl font-black text-xl shadow active:scale-95 transition hover:bg-blue-600">
+                                    +</button>
+                            `}
                         </div>
                     </div>
                 </div>`;
@@ -1072,6 +1302,33 @@
             if (!produto) return;
             
             const categoria = CATS.find(c => c.id === produto.categoria_id);
+            const temImagem = produto.imagem_url && produto.imagem_url.trim() !== '';
+            const isCerveja = categoria?.nome?.toLowerCase().includes('cerveja');
+            
+            let botaoHTML = '';
+            if (isCerveja) {
+                botaoHTML = `
+                <div class="space-y-3">
+                    <button onclick="adicionarCervejaComVasilhame('${produto.id}', false)" 
+                            class="w-full bg-green-600 text-white py-4 rounded-[25px] font-black uppercase text-sm hover:bg-green-700 transition ${produto.disponivel === false ? 'opacity-50 cursor-not-allowed' : ''}"
+                            ${produto.disponivel === false ? 'disabled' : ''}>
+                        ✅ POSSUO VASILHAME - R$ ${Number(produto.preco || 0).toFixed(2).replace('.',',')}
+                    </button>
+                    <button onclick="adicionarCervejaComVasilhame('${produto.id}', true)" 
+                            class="w-full bg-blue-600 text-white py-4 rounded-[25px] font-black uppercase text-sm hover:bg-blue-700 transition ${produto.disponivel === false ? 'opacity-50 cursor-not-allowed' : ''}"
+                            ${produto.disponivel === false ? 'disabled' : ''}>
+                        ➕ VASILHAME INCLUSO - R$ ${(Number(produto.preco || 0) + 1).toFixed(2).replace('.',',')}
+                        <span class="text-xs">(+ R$ 1,00)</span>
+                    </button>
+                </div>`;
+            } else {
+                botaoHTML = `
+                <button onclick="addCart('${produto.id}'); fecharDetalhesProduto()" 
+                        class="w-full bg-blue-600 text-white py-4 rounded-[25px] font-black uppercase text-sm hover:bg-blue-700 transition ${produto.disponivel === false ? 'opacity-50 cursor-not-allowed' : ''}"
+                        ${produto.disponivel === false ? 'disabled' : ''}>
+                    ${produto.disponivel !== false ? 'Adicionar ao Carrinho' : 'Indisponível'}
+                </button>`;
+            }
             
             // Criar modal de detalhes
             const modalHTML = `
@@ -1079,9 +1336,15 @@
                     <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden">
                         <div class="relative">
                             <div class="product-image-container">
-                                <img src="${produto.imagem_url || 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&auto=format&fit=crop&q=80'}" 
+                                ${temImagem ? `
+                                <img src="${produto.imagem_url}" 
                                      class="product-image"
                                      onerror="this.src='https://cdn-icons-png.flaticon.com/512/3075/3075977.png'">
+                                ` : `
+                                <div class="text-blue-400 text-4xl">
+                                    <i class="fas fa-wine-bottle"></i>
+                                </div>
+                                `}
                             </div>
                             <button onclick="fecharDetalhesProduto()" class="absolute top-4 right-4 bg-white/80 w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
                         </div>
@@ -1095,11 +1358,7 @@
                                 ${produto.disponivel !== false ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded-full ml-1">Disponível</span>' : '<span class="bg-red-100 text-red-800 px-2 py-1 rounded-full ml-1">Indisponível</span>'}
                             </div>
                             <p class="text-sm text-gray-600 mb-6">${produto.descricao || 'Sem descrição'}</p>
-                            <button onclick="addCart('${produto.id}'); fecharDetalhesProduto()" 
-                                    class="w-full bg-blue-600 text-white py-4 rounded-[25px] font-black uppercase text-sm hover:bg-blue-700 transition ${produto.disponivel === false ? 'opacity-50 cursor-not-allowed' : ''}"
-                                    ${produto.disponivel === false ? 'disabled' : ''}>
-                                ${produto.disponivel !== false ? 'Adicionar ao Carrinho' : 'Indisponível'}
-                            </button>
+                            ${botaoHTML}
                         </div>
                     </div>
                 </div>`;
@@ -1118,6 +1377,287 @@
             }
         }
 
+        // ==================== FUNÇÕES DE VASILHAME COM QUANTIDADE ====================
+
+        // FUNÇÃO: Abrir modal de vasilhame com quantidade (para o cardápio)
+        function abrirModalVasilhameComQuantidade(produtoId) {
+            const produto = PRODS.find(i => i.id === produtoId);
+            if (!produto) return;
+            
+            if(CONFIG.loja_aberta === false) {
+                alert("A loja está fechada no momento. Volte mais tarde!");
+                return;
+            }
+            
+            if (produto.disponivel === false) {
+                alert("Esta cerveja não está disponível no momento!");
+                return;
+            }
+            
+            abrirModalVasilhame(produto);
+        }
+
+        // NOVA FUNÇÃO: Modal de seleção de vasilhame COM QUANTIDADE
+        function abrirModalVasilhame(produto) {
+            // Criar modal com quantidade
+            const modalHTML = `
+                <div id="modal-vasilhame" class="vasilhame-modal">
+                    <div class="vasilhame-content">
+                        <div class="vasilhame-header">
+                            <h3>${produto.nome}</h3>
+                            <div style="font-size: 0.8rem; opacity: 0.9;">Escolha a opção e quantidade</div>
+                        </div>
+                        <div class="vasilhame-body">
+                            <!-- Controle de quantidade -->
+                            <div class="mb-6 p-4 bg-gray-50 rounded-2xl text-center">
+                                <div class="text-sm font-bold text-gray-700 mb-3">Quantas cervejas?</div>
+                                <div class="flex items-center justify-center gap-4">
+                                    <button onclick="alterarQuantidadeModal('decrease')" 
+                                            class="bg-blue-100 text-blue-700 w-10 h-10 rounded-full text-xl font-bold hover:bg-blue-200 transition">
+                                        -
+                                    </button>
+                                    <span id="quantidade-modal" class="text-3xl font-black text-gray-900 w-12 text-center">1</span>
+                                    <button onclick="alterarQuantidadeModal('increase')" 
+                                            class="bg-blue-100 text-blue-700 w-10 h-10 rounded-full text-xl font-bold hover:bg-blue-200 transition">
+                                        +
+                                    </button>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-2">Digite a quantidade desejada</div>
+                            </div>
+                            
+                            <!-- Opções de vasilhame -->
+                            <div class="space-y-4">
+                                <div class="vasilhame-option possui" onclick="selecionarVasilhameComQuantidade('${produto.id}', 'possui')">
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-left">
+                                            <div class="vasilhame-icon">✅</div>
+                                            <div style="font-weight: 900; font-size: 1.1rem;">POSSUO VASILHAME</div>
+                                            <div class="vasilhame-desc">Já tenho os vasilhames em casa</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="vasilhame-price" id="preco-possui">R$ ${Number(produto.preco || 0).toFixed(2).replace('.',',')}</div>
+                                            <div class="text-xs text-gray-500">cada</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="vasilhame-option incluso" onclick="selecionarVasilhameComQuantidade('${produto.id}', 'incluso')">
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-left">
+                                            <div class="vasilhame-icon">➕</div>
+                                            <div style="font-weight: 900; font-size: 1.1rem;">VASILHAME INCLUSO</div>
+                                            <div class="vasilhame-desc">Vasilhame incluso + R$ 1,00</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="vasilhame-price" id="preco-incluso">R$ ${(Number(produto.preco || 0) + 1).toFixed(2).replace('.',',')}</div>
+                                            <div class="text-xs text-gray-500">cada</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Total do pedido -->
+                            <div id="total-container" class="mt-6 p-4 bg-gray-900 text-white rounded-2xl text-center">
+                                <div class="text-xs opacity-80">Total para</div>
+                                <div class="text-2xl font-black" id="total-quantidade">1 unidade</div>
+                                <div class="text-lg font-bold text-blue-300" id="total-preco">R$ ${Number(produto.preco || 0).toFixed(2).replace('.',',')}</div>
+                            </div>
+                        </div>
+                        <div class="vasilhame-footer">
+                            <div style="font-size: 0.7rem; color: #64748b; padding: 10px; text-align: center;">
+                                <strong>Obs:</strong> Vasilhames devem ser devolvidos na próxima entrega
+                            </div>
+                            <button onclick="fecharModalVasilhame()" 
+                                    style="background: none; border: none; color: #64748b; font-size: 0.8rem; cursor: pointer; padding: 10px;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            
+            // Adicionar modal ao body
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = modalHTML;
+            document.body.appendChild(modalDiv);
+            
+            // Inicializar variáveis de quantidade
+            window.quantidadeAtual = 1;
+            window.produtoAtual = produto;
+            atualizarTotalModal();
+        }
+
+        // FUNÇÃO: Alterar quantidade no modal
+        function alterarQuantidadeModal(acao) {
+            if (acao === 'increase') {
+                window.quantidadeAtual++;
+            } else if (acao === 'decrease' && window.quantidadeAtual > 1) {
+                window.quantidadeAtual--;
+            }
+            
+            document.getElementById('quantidade-modal').textContent = window.quantidadeAtual;
+            atualizarTotalModal();
+        }
+
+        // FUNÇÃO: Atualizar totais no modal
+        function atualizarTotalModal() {
+            const quantidade = window.quantidadeAtual;
+            const produto = window.produtoAtual;
+            
+            if (!produto) return;
+            
+            // Atualizar textos
+            document.getElementById('total-quantidade').textContent = 
+                quantidade + (quantidade === 1 ? ' unidade' : ' unidades');
+            
+            // Atualizar preços
+            const precoNormal = produto.preco || 0;
+            const precoComVasilhame = precoNormal + 1;
+            
+            document.getElementById('preco-possui').textContent = `R$ ${precoNormal.toFixed(2).replace('.',',')}`;
+            document.getElementById('preco-incluso').textContent = `R$ ${precoComVasilhame.toFixed(2).replace('.',',')}`;
+            
+            // Mostrar total base (usando preço normal como referência)
+            const totalBase = precoNormal * quantidade;
+            document.getElementById('total-preco').textContent = `R$ ${totalBase.toFixed(2).replace('.',',')}`;
+        }
+
+        // FUNÇÃO: Fechar modal de vasilhame
+        function fecharModalVasilhame() {
+            const modal = document.getElementById('modal-vasilhame');
+            if (modal) {
+                modal.remove();
+            }
+            window.quantidadeAtual = 1;
+            window.produtoAtual = null;
+        }
+
+        // NOVA FUNÇÃO: Selecionar vasilhame com quantidade
+        function selecionarVasilhameComQuantidade(produtoId, opcao) {
+            const produto = PRODS.find(i => i.id === produtoId);
+            if (!produto) return;
+            
+            const quantidade = window.quantidadeAtual || 1;
+            
+            // Fechar modal
+            fecharModalVasilhame();
+            
+            // Calcular preço baseado na opção
+            let precoUnitario = produto.preco;
+            let descricaoOpcao = "";
+            
+            if (opcao === 'possui') {
+                // Preço normal
+                descricaoOpcao = "(Possuo vasilhame)";
+            } else if (opcao === 'incluso') {
+                // + R$ 1,00 pelo vasilhame
+                precoUnitario = produto.preco + 1;
+                descricaoOpcao = "(Vasilhame incluso + R$ 1,00)";
+            }
+            
+            // Adicionar múltiplas unidades ao carrinho
+            for (let i = 0; i < quantidade; i++) {
+                adicionarAoCarrinhoComQuantidade(produto, opcao, precoUnitario, descricaoOpcao, quantidade);
+            }
+            
+            // Animação - usar o botão que foi clicado como referência
+            setTimeout(() => {
+                const modalVasilhame = document.querySelector('.vasilhame-modal');
+                if (modalVasilhame) {
+                    const opcaoSelecionada = modalVasilhame.querySelector(`.vasilhame-option.${opcao}`);
+                    if (opcaoSelecionada) {
+                        animarParaCarrinho(opcaoSelecionada, quantidade);
+                    }
+                }
+            }, 100);
+        }
+
+        // NOVA FUNÇÃO: Adicionar cervejas com quantidade
+        function adicionarAoCarrinhoComQuantidade(produto, opcao, precoUnitario, descricaoOpcao, quantidade) {
+            let produtoCarrinho = {
+                id: produto.id,
+                nome: `${produto.nome} ${descricaoOpcao}`,
+                descricao: produto.descricao || '',
+                preco: precoUnitario,
+                tipo: 'produto',
+                imagem_url: produto.imagem_url,
+                vasilhame_opcao: opcao, // 'possui' ou 'incluso'
+                vasilhame_adicional: opcao === 'incluso' ? 1 : 0
+            };
+            
+            CARRINHO.push(produtoCarrinho);
+            updateCartFooter();
+            
+            // Feedback visual apenas uma vez
+            if (CARRINHO.filter(item => item.id === produto.id && item.vasilhame_opcao === opcao).length === quantidade) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: ${opcao === 'incluso' ? '#10b981' : '#3b82f6'};
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    z-index: 1000;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    animation: slideIn 0.3s, slideOut 0.3s 2s forwards;
+                `;
+                const total = precoUnitario * quantidade;
+                toast.innerHTML = `✅ ${quantidade}x ${produto.nome}<br>
+                                  <small>${opcao === 'incluso' ? 'Vasilhame incluso' : 'Possuo vasilhame'}</small><br>
+                                  <strong>Total: R$ ${total.toFixed(2).replace('.',',')}</strong>`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 3000);
+            }
+        }
+
+        // ATUALIZAR FUNÇÃO: Adicionar cerveja da tela de detalhes COM QUANTIDADE
+        function adicionarCervejaComVasilhame(produtoId, opcaoBoolean) {
+            const produto = PRODS.find(i => i.id === produtoId);
+            if (!produto) return;
+            
+            // Pedir quantidade
+            const quantidadeStr = prompt(`Quantas unidades de ${produto.nome}?`, "1");
+            if (!quantidadeStr) return;
+            
+            const quantidade = parseInt(quantidadeStr) || 1;
+            if (quantidade < 1) {
+                alert("Quantidade deve ser maior que 0");
+                return;
+            }
+            
+            let opcao = opcaoBoolean ? 'incluso' : 'possui';
+            let precoUnitario = produto.preco;
+            let descricaoOpcao = "";
+            
+            if (opcao === 'incluso') {
+                precoUnitario = produto.preco + 1;
+                descricaoOpcao = "(Vasilhame incluso + R$ 1,00)";
+            } else {
+                descricaoOpcao = "(Possuo vasilhame)";
+            }
+            
+            // Adicionar múltiplas unidades
+            for (let i = 0; i < quantidade; i++) {
+                adicionarAoCarrinhoComQuantidade(produto, opcao, precoUnitario, descricaoOpcao, quantidade);
+            }
+            
+            // Animação - usar o botão que foi clicado
+            if (event && event.target) {
+                animarParaCarrinho(event.target, quantidade);
+            }
+            
+            fecharDetalhesProduto();
+        }
+
+        // FUNÇÃO ATUALIZADA: Adicionar produto ao carrinho
         function addCart(id) {
             if(CONFIG.loja_aberta === false) {
                 alert("A loja está fechada no momento. Volte mais tarde!");
@@ -1135,30 +1675,128 @@
                 return;
             }
             
-            // Adicionar produto ao carrinho
-            const produtoCarrinho = {
-                id: produto.id,
-                nome: produto.nome,
-                descricao: produto.descricao || '',
-                preco: produto.preco,
-                tipo: 'produto'
-            };
+            const categoria = CATS.find(c => c.id === produto.categoria_id);
+            const isCerveja = categoria?.nome?.toLowerCase().includes('cerveja');
             
-            CARRINHO.push(produtoCarrinho);
-            updateCartFooter();
+            // Se for cerveja, mostrar modal de seleção de vasilhame COM QUANTIDADE
+            if (isCerveja) {
+                abrirModalVasilhame(produto);
+                return; // Importante: sair da função aqui
+            } else {
+                // Para outros produtos, adicionar diretamente
+                CARRINHO.push({
+                    id: produto.id,
+                    nome: produto.nome,
+                    descricao: produto.descricao || '',
+                    preco: produto.preco,
+                    tipo: 'produto',
+                    imagem_url: produto.imagem_url
+                });
+                
+                // Animação de jogar para o carrinho
+                if (event && event.target) {
+                    animarParaCarrinho(event.target, 1);
+                }
+                
+                updateCartFooter();
+                
+                // Feedback visual no botão
+                if (event?.target) {
+                    const btn = event.target;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = "✓";
+                    btn.classList.remove('bg-blue-500');
+                    btn.classList.add('bg-green-500');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('bg-green-500');
+                        btn.classList.add('bg-blue-500');
+                    }, 500);
+                }
+            }
+        }
+
+        // NOVA FUNÇÃO: Animação de jogar para o carrinho
+        function animarParaCarrinho(elementoOrigem, quantidade = 1) {
+            // Encontrar o ícone do carrinho
+            const cartIcon = document.querySelector('#cart-fixed button span') || 
+                             document.querySelector('#cart-fixed') || 
+                             document.querySelector('#modal-carrinho h2');
             
-            // Feedback visual
-            const btn = event?.target;
-            if (btn) {
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = "✓";
-                btn.classList.remove('bg-blue-500');
-                btn.classList.add('bg-green-500');
+            if (!cartIcon || !elementoOrigem) return;
+            
+            // Criar elemento de animação
+            const animElement = document.createElement('div');
+            animElement.className = 'fly-to-cart';
+            animElement.innerHTML = '🛒';
+            
+            // Posição do elemento de origem
+            const origemRect = elementoOrigem.getBoundingClientRect();
+            const origemX = origemRect.left + origemRect.width / 2;
+            const origemY = origemRect.top + origemRect.height / 2;
+            
+            // Posição do destino (carrinho)
+            const destinoRect = cartIcon.getBoundingClientRect();
+            const destinoX = destinoRect.left + destinoRect.width / 2;
+            const destinoY = destinoRect.top + destinoRect.height / 2;
+            
+            // Calcular distância
+            const diffX = destinoX - origemX;
+            const diffY = destinoY - origemY;
+            
+            // Configurar animação
+            animElement.style.cssText = `
+                left: ${origemX}px;
+                top: ${origemY}px;
+                font-size: 20px;
+                --tx: ${diffX * 0.5}px;
+                --ty: ${diffY * 0.5}px;
+                --tx-end: ${diffX}px;
+                --ty-end: ${diffY}px;
+            `;
+            
+            document.body.appendChild(animElement);
+            
+            // Animar o carrinho
+            if (cartIcon) {
+                cartIcon.classList.add('cart-shake');
                 setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.classList.remove('bg-green-500');
-                    btn.classList.add('bg-blue-500');
+                    cartIcon.classList.remove('cart-shake');
                 }, 500);
+            }
+            
+            // Remover elemento após animação
+            setTimeout(() => {
+                if (animElement.parentNode) {
+                    animElement.remove();
+                }
+            }, 800);
+            
+            // Criar múltiplas animações para quantidade maior que 1
+            if (quantidade > 1) {
+                for (let i = 1; i < Math.min(quantidade, 10); i++) {
+                    setTimeout(() => {
+                        const cloneAnim = document.createElement('div');
+                        cloneAnim.className = 'fly-to-cart';
+                        cloneAnim.innerHTML = '🛒';
+                        cloneAnim.style.cssText = `
+                            left: ${origemX + (Math.random() * 40 - 20)}px;
+                            top: ${origemY + (Math.random() * 40 - 20)}px;
+                            font-size: 20px;
+                            --tx: ${diffX * 0.5}px;
+                            --ty: ${diffY * 0.5}px;
+                            --tx-end: ${diffX}px;
+                            --ty-end: ${diffY}px;
+                        `;
+                        document.body.appendChild(cloneAnim);
+                        
+                        setTimeout(() => {
+                            if (cloneAnim.parentNode) {
+                                cloneAnim.remove();
+                            }
+                        }, 800);
+                    }, i * 100);
+                }
             }
         }
 
@@ -1171,6 +1809,49 @@
                 }
                 renderCarrinhoModal();
             }
+        }
+
+        // NOVA FUNÇÃO: Alterar quantidade de um item no carrinho
+        function alterarQuantidade(index, action) {
+            const itemId = Object.keys(CARRINHO.reduce((acc, item, idx) => {
+                if (idx === index) acc[item.id] = item;
+                return acc;
+            }, {}))[0];
+            
+            const allItems = CARRINHO.filter(item => item.id === itemId);
+            const primeiroItem = allItems[0];
+            
+            if (action === 'decrease') {
+                // Remover um item
+                const removeIndex = CARRINHO.findIndex(item => item.id === itemId);
+                if (removeIndex !== -1) {
+                    CARRINHO.splice(removeIndex, 1);
+                }
+            } else if (action === 'increase') {
+                // Adicionar um item
+                CARRINHO.push({
+                    id: primeiroItem.id,
+                    nome: primeiroItem.nome,
+                    descricao: primeiroItem.descricao || '',
+                    preco: primeiroItem.preco,
+                    tipo: primeiroItem.tipo || 'produto',
+                    imagem_url: primeiroItem.imagem_url,
+                    vasilhame_opcao: primeiroItem.vasilhame_opcao,
+                    vasilhame_adicional: primeiroItem.vasilhame_adicional
+                });
+            }
+            
+            updateCartFooter();
+            renderCarrinhoModal();
+            renderCheckoutItens();
+        }
+
+        // NOVA FUNÇÃO: Remover todos os itens de um produto
+        function removerItemPorId(itemId) {
+            CARRINHO = CARRINHO.filter(item => item.id !== itemId);
+            updateCartFooter();
+            renderCarrinhoModal();
+            renderCheckoutItens();
         }
 
         function abrirCarrinho() {
@@ -1196,25 +1877,87 @@
             
             vazio.classList.add('hidden');
             
+            // Agrupar itens por ID e vasilhame
+            const itensAgrupados = CARRINHO.reduce((acc, item) => {
+                const key = `${item.id}-${item.vasilhame_opcao || 'none'}`;
+                if (!acc[key]) {
+                    acc[key] = {
+                        ...item,
+                        quantidade: 1,
+                        precoTotal: Number(item.preco || 0)
+                    };
+                } else {
+                    acc[key].quantidade += 1;
+                    acc[key].precoTotal += Number(item.preco || 0);
+                }
+                return acc;
+            }, {});
+            
             let html = '';
             let total = 0;
+            let index = 0;
             
-            CARRINHO.forEach((item, index) => {
-                total += Number(item.preco || 0);
+            Object.values(itensAgrupados).forEach(item => {
+                total += item.precoTotal;
+                
+                // Verificar se é cerveja com vasilhame
+                const isCervejaComVasilhame = item.vasilhame_opcao === 'incluso';
+                const isCervejaPossuiVasilhame = item.vasilhame_opcao === 'possui';
+                
+                let nomeDisplay = item.nome;
+                // Remover sufixos para exibição mais limpa
+                if (nomeDisplay.includes('(Possuo vasilhame)')) {
+                    nomeDisplay = nomeDisplay.replace('(Possuo vasilhame)', '');
+                }
+                if (nomeDisplay.includes('(Vasilhame incluso + R$ 1,00)')) {
+                    nomeDisplay = nomeDisplay.replace('(Vasilhame incluso + R$ 1,00)', '');
+                }
+                
+                const temImagem = item.imagem_url && item.imagem_url.trim() !== '';
                 
                 html += `
                 <div class="bg-white p-4 rounded-[20px] border border-blue-100 flex justify-between items-center">
                     <div class="flex-1">
-                        <div class="font-black text-[11px] uppercase text-gray-800">${item.nome}</div>
-                        <div class="text-[9px] text-gray-400">${item.descricao || ''}</div>
-                        <div class="text-blue-600 font-black text-sm mt-1">R$ ${Number(item.preco || 0).toFixed(2).replace('.',',')}</div>
+                        <div class="flex items-center gap-3">
+                            ${temImagem ? `
+                            <div class="w-12 h-12 rounded-xl bg-blue-100 overflow-hidden">
+                                <img src="${item.imagem_url}" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3075/3075977.png'">
+                            </div>
+                            ` : ''}
+                            <div class="flex-1">
+                                <div class="font-black text-[11px] uppercase text-gray-800">${nomeDisplay}</div>
+                                ${isCervejaComVasilhame ? `
+                                <div class="text-[8px] text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block">
+                                    Vasilhame incluso (+R$ 1,00)
+                                </div>
+                                ` : ''}
+                                ${isCervejaPossuiVasilhame ? `
+                                <div class="text-[8px] text-green-600 bg-green-50 px-2 py-1 rounded-full inline-block">
+                                    Possuo vasilhame
+                                </div>
+                                ` : ''}
+                                <div class="text-[9px] text-gray-400">${item.descricao || ''}</div>
+                                <div class="flex items-center gap-3 mt-2">
+                                    <div class="text-blue-600 font-black text-sm">R$ ${item.precoTotal.toFixed(2).replace('.',',')}</div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="alterarQuantidade(${index}, 'decrease')" class="bg-blue-100 text-blue-600 w-6 h-6 rounded-lg font-bold flex items-center justify-center">
+                                            <i class="fas fa-minus text-[8px]"></i>
+                                        </button>
+                                        <span class="text-sm font-black">${item.quantidade}</span>
+                                        <button onclick="alterarQuantidade(${index}, 'increase')" class="bg-blue-100 text-blue-600 w-6 h-6 rounded-lg font-bold flex items-center justify-center">
+                                            <i class="fas fa-plus text-[8px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="removeCart(${index})" class="bg-blue-100 text-blue-600 w-8 h-8 rounded-xl font-black text-lg shadow hover:bg-blue-200 transition">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                    <button onclick="removerItemPorId('${item.id}')" class="bg-blue-100 text-blue-600 w-8 h-8 rounded-xl font-black text-lg shadow hover:bg-blue-200 transition ml-2">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
                 </div>`;
+                
+                index++;
             });
             
             container.innerHTML = html;
@@ -1241,7 +1984,7 @@
         function salvarCarrinhoLocal() {
             try {
                 const carrinhoData = {
-                    itens: CARRINHO.map(item => ({id: item.id, nome: item.nome, preco: item.preco})),
+                    itens: CARRINHO.map(item => ({id: item.id, nome: item.nome, preco: item.preco, vasilhame_opcao: item.vasilhame_opcao})),
                     timestamp: new Date().getTime()
                 };
                 localStorage.setItem('bebidas_carrinho', JSON.stringify(carrinhoData));
@@ -1264,10 +2007,11 @@
                             if (produto && produto.disponivel !== false) {
                                 CARRINHO.push({
                                     id: produto.id,
-                                    nome: produto.nome,
+                                    nome: item.nome || produto.nome,
                                     descricao: produto.descricao || '',
                                     preco: produto.preco,
-                                    tipo: 'produto'
+                                    tipo: 'produto',
+                                    vasilhame_opcao: item.vasilhame_opcao
                                 });
                             }
                         });
@@ -1331,24 +2075,63 @@
             
             // Listar itens do carrinho
             renderCheckoutItens();
-            setModoConsumo(modoConsumo);
             renderCheckoutTotal();
         }
 
         function renderCheckoutItens() {
             const container = document.getElementById('checkout-itens-list');
+            
+            // Agrupar itens por ID e vasilhame
+            const itensAgrupados = CARRINHO.reduce((acc, item) => {
+                const key = `${item.id}-${item.vasilhame_opcao || 'none'}`;
+                if (!acc[key]) {
+                    acc[key] = {
+                        ...item,
+                        quantidade: 1,
+                        precoTotal: Number(item.preco || 0)
+                    };
+                } else {
+                    acc[key].quantidade += 1;
+                    acc[key].precoTotal += Number(item.preco || 0);
+                }
+                return acc;
+            }, {});
+            
             let html = '';
             
-            CARRINHO.forEach((item, index) => {
+            Object.values(itensAgrupados).forEach(item => {
+                // Verificar se é cerveja com vasilhame
+                const isCervejaComVasilhame = item.vasilhame_opcao === 'incluso';
+                const isCervejaPossuiVasilhame = item.vasilhame_opcao === 'possui';
+                
+                let nomeDisplay = item.nome;
+                // Remover sufixos para exibição mais limpa
+                if (nomeDisplay.includes('(Possuo vasilhame)')) {
+                    nomeDisplay = nomeDisplay.replace('(Possuo vasilhame)', '');
+                }
+                if (nomeDisplay.includes('(Vasilhame incluso + R$ 1,00)')) {
+                    nomeDisplay = nomeDisplay.replace('(Vasilhame incluso + R$ 1,00)', '');
+                }
+                
                 html += `
                 <div class="flex justify-between border-b border-blue-100 pb-2 items-center">
-                    <div>
-                        <span class="font-black">${item.nome}</span>
+                    <div class="flex-1">
+                        <div class="font-black">${nomeDisplay} × ${item.quantidade}</div>
+                        ${isCervejaComVasilhame ? `
+                        <div class="text-[9px] text-blue-600">
+                            Vasilhame incluso (+R$ 1,00)
+                        </div>
+                        ` : ''}
+                        ${isCervejaPossuiVasilhame ? `
+                        <div class="text-[9px] text-green-600">
+                            Possuo vasilhame
+                        </div>
+                        ` : ''}
                         ${item.descricao ? `<div class="text-[9px] text-gray-500">${item.descricao}</div>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-blue-600 font-black">R$ ${Number(item.preco || 0).toFixed(2).replace('.',',')}</span>
-                        <button onclick="removeCartCheckout(${index})" class="text-blue-500 text-xs hover:text-blue-700">
+                        <span class="text-blue-600 font-black">R$ ${item.precoTotal.toFixed(2).replace('.',',')}</span>
+                        <button onclick="removerItemDoCheckout('${item.id}')" class="text-blue-500 text-xs hover:text-blue-700">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -1356,6 +2139,17 @@
             });
             
             container.innerHTML = html;
+        }
+
+        // NOVA FUNÇÃO: Remover item do checkout
+        function removerItemDoCheckout(itemId) {
+            CARRINHO = CARRINHO.filter(item => item.id !== itemId);
+            renderCheckoutItens();
+            renderCheckoutTotal();
+            
+            if (CARRINHO.length === 0) {
+                fecharCheckout();
+            }
         }
 
         function removeCartCheckout(index) {
@@ -1372,49 +2166,16 @@
             document.getElementById('modal-checkout').classList.add('hidden');
         }
 
-        function setModoConsumo(m) {
-            modoConsumo = m;
-            const botoes = ['delivery', 'retirada'];
-            
-            botoes.forEach(x => {
-                const btn = document.getElementById(`btn-m-${x}`);
-                if (btn) {
-                    if (x === m) {
-                        btn.className = "p-3 text-[9px] font-black rounded-xl bg-white shadow-sm border border-blue-200 text-black uppercase";
-                    } else {
-                        btn.className = "p-3 text-[9px] font-black rounded-xl text-gray-400 uppercase";
-                    }
-                }
-            });
-            
-            const areaGPS = document.getElementById('area-gps-cli');
-            if (areaGPS) {
-                areaGPS.classList.toggle('hidden', m !== 'delivery');
-            }
-            
-            if (m !== 'delivery') {
-                tFRETE = 0;
-                gpsOk = true;
-                document.getElementById('res-km').classList.add('hidden');
-            } else {
-                gpsOk = false;
-            }
-            
-            renderCheckoutTotal();
-        }
-
         function renderCheckoutTotal() {
             const sub = CARRINHO.reduce((a, b) => a + Number(b.preco || 0), 0);
             
-            // CORREÇÃO: Se modo delivery mas não calculou frete, mostrar 0
-            const frete = (modoConsumo === 'delivery' && gpsOk) ? tFRETE : 0;
+            // Frete calculado pelo GPS
+            const frete = gpsOk ? tFRETE : 0;
             
-            // CORREÇÃO: REMOVER DESCONTO AUTOMÁTICO DO PIX
-            // Apenas aplicar desconto do cupom, sem desconto automático
             const final = sub + frete - vCUPOM;
             const totalFinal = Math.max(0, final);
             
-            // Usar totalFinal direto (sem desconto Pix)
+            // Usar totalFinal direto
             const totalComDesconto = totalFinal;
             
             document.getElementById('res-total').innerText = `R$ ${totalComDesconto.toFixed(2).replace('.',',')}`;
@@ -1508,8 +2269,8 @@
             const totalStr = document.getElementById('res-total').innerText;
             
             // Validações
-            if (modoConsumo === 'delivery' && !gpsOk) {
-                alert("📍 É necessário calcular o frete pelo GPS para delivery!");
+            if (!gpsOk) {
+                alert("📍 É necessário calcular o frete pelo GPS!");
                 return;
             }
             
@@ -1526,15 +2287,13 @@
                 return;
             }
             
-            // Verificar endereço para delivery
-            if (modoConsumo === 'delivery') {
-                const rua = document.getElementById('f-rua').value.trim();
-                const bairro = document.getElementById('f-bairro').value.trim();
-                
-                if (!rua || !bairro) {
-                    alert("Para delivery, preencha o endereço completo!");
-                    return;
-                }
+            // Verificar endereço
+            const rua = document.getElementById('f-rua').value.trim();
+            const bairro = document.getElementById('f-bairro').value.trim();
+            
+            if (!rua || !bairro) {
+                alert("Preencha o endereço completo!");
+                return;
             }
             
             // Verificar pedido mínimo
@@ -1545,9 +2304,12 @@
                 return;
             }
             
-            // Agrupar itens
+            // Agrupar itens considerando vasilhame
             const ag = CARRINHO.reduce((acc, i) => {
-                acc[i.nome] = (acc[i.nome] || 0) + 1;
+                const key = i.vasilhame_opcao !== undefined ? 
+                    `${i.nome} (${i.vasilhame_opcao === 'incluso' ? 'c/ vasilhame' : 's/ vasilhame'})` : 
+                    i.nome;
+                acc[key] = (acc[key] || 0) + 1;
                 return acc;
             }, {});
             
@@ -1558,9 +2320,9 @@
             const pedido = {
                 cliente_nome: nome,
                 cliente_whatsapp: whatsapp,
-                rua: modoConsumo === 'delivery' ? document.getElementById('f-rua').value.trim() : modoConsumo.toUpperCase(),
+                rua: rua,
                 numero: document.getElementById('f-num').value || "S/N",
-                bairro: document.getElementById('f-bairro').value || "",
+                bairro: bairro,
                 complemento: document.getElementById('f-comp').value || "",
                 total: totalFinal,
                 status: 'Novo',
@@ -1573,7 +2335,7 @@
                 lat_cli: latCli,
                 lng_cli: lngCli,
                 desconto: vCUPOM,
-                modo_consumo: modoConsumo,
+                modo_consumo: 'delivery',
                 tipo: 'bebidas'
             };
             
@@ -1596,14 +2358,13 @@
                 }
                 
                 const url = `${window.location.origin}${window.location.pathname}?pedido=${docRef.id}`;
-                const maps = modoConsumo === 'delivery' ? `\n📍 *Mapa:* https://www.google.com/maps?q=${latCli},${lngCli}` : "";
+                const maps = `\n📍 *Mapa:* https://www.google.com/maps?q=${latCli},${lngCli}`;
                 
                 const msg = `*🥤 NOVO PEDIDO - ${CONFIG.nome_loja || 'Bebidas Delivery'}*\n` +
                            `═══════════════════════════\n` +
                            `*Cliente:* ${nome}\n` +
                            `*WhatsApp:* ${whatsapp}\n` +
-                           `*Modo:* ${modoConsumo.toUpperCase()}\n` +
-                           (modoConsumo === 'delivery' ? `*Endereço:* ${pedido.rua}, ${pedido.numero} - ${pedido.bairro}\n` : "") +
+                           `*Endereço:* ${pedido.rua}, ${pedido.numero} - ${pedido.bairro}\n` +
                            (pedido.complemento ? `*Complemento:* ${pedido.complemento}\n` : "") +
                            `═══════════════════════════\n` +
                            `*ITENS DO PEDIDO:*\n${itensTxt}\n` +
@@ -1983,7 +2744,7 @@
                         <div style="margin-bottom: 10px;">
                             <div><strong>Cliente:</strong> ${pedido.cliente_nome || '-'}</div>
                             <div><strong>WhatsApp:</strong> ${pedido.cliente_whatsapp || '-'}</div>
-                            ${pedido.modo_consumo === 'delivery' ? `<div><strong>Endereço:</strong> ${pedido.rua || ''}, ${pedido.numero || ''} - ${pedido.bairro || ''}</div>` : ''}
+                            <div><strong>Endereço:</strong> ${pedido.rua || ''}, ${pedido.numero || ''} - ${pedido.bairro || ''}</div>
                             <div><strong>Status:</strong> ${pedido.status || 'Novo'}</div>
                             <div><strong>Pagamento:</strong> ${pedido.pagamento || '-'}</div>
                             ${pedido.troco && pedido.troco !== 'Não solicitado' ? `<div><strong>Troco para:</strong> R$ ${pedido.troco}</div>` : ''}
@@ -2206,13 +2967,18 @@
                     PRODS.forEach(p => {
                         const cat = CATS.find(c => c.id === p.categoria_id);
                         const catNome = cat ? cat.nome : 'Sem categoria';
+                        const temImagem = p.imagem_url && p.imagem_url.trim() !== '';
                         
                         html += `
                         <div class="bg-white p-4 rounded-[25px] shadow-sm mb-3 flex justify-between items-center">
                             <div class="flex-1">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-xl bg-blue-100">
-                                        <img src="${p.imagem_url || 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png'}" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3075/3075977.png'">
+                                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                                        ${temImagem ? `
+                                        <img src="${p.imagem_url}" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3075/3075977.png'">
+                                        ` : `
+                                        <i class="fas fa-wine-bottle text-blue-400 text-xl"></i>
+                                        `}
                                     </div>
                                     <div>
                                         <div class="font-black text-[11px] uppercase text-gray-800">${p.nome}</div>
@@ -3026,7 +3792,6 @@
         window.enviarPedido = enviarPedido;
         window.renderFiltros = renderFiltros;
         window.fecharCheckout = fecharCheckout;
-        window.setModoConsumo = setModoConsumo;
         window.abrirCheckout = abrirCheckout;
         window.carregarAcompanhamento = carregarAcompanhamento;
         window.updateStatusLojaUI = updateStatusLojaUI;
@@ -3036,6 +3801,9 @@
         window.abrirDetalhesProduto = abrirDetalhesProduto;
         window.fecharDetalhesProduto = fecharDetalhesProduto;
         window.removeCartCheckout = removeCartCheckout;
+        window.alterarQuantidade = alterarQuantidade;
+        window.removerItemPorId = removerItemPorId;
+        window.removerItemDoCheckout = removerItemDoCheckout;
 
         // Funções do painel ADM
         window.switchTab = switchTab;
@@ -3060,6 +3828,18 @@
         window.toggleStatusPromocao = toggleStatusPromocao;
         window.obterLocalizacaoLoja = obterLocalizacaoLoja;
         window.obterEnderecoDasCoordenadas = obterEnderecoDasCoordenadas;
+
+        // Novas funções para seleção de vasilhame com quantidade
+        window.fecharModalVasilhame = fecharModalVasilhame;
+        window.alterarQuantidadeModal = alterarQuantidadeModal;
+        window.selecionarVasilhameComQuantidade = selecionarVasilhameComQuantidade;
+        window.adicionarCervejaComVasilhame = adicionarCervejaComVasilhame;
+        window.adicionarAoCarrinhoComQuantidade = adicionarAoCarrinhoComQuantidade;
+        window.abrirModalVasilhameComQuantidade = abrirModalVasilhameComQuantidade;
+        window.abrirModalVasilhame = abrirModalVasilhame;
+
+        // Animações
+        window.animarParaCarrinho = animarParaCarrinho;
 
         // Expor a função init para ser chamada pelo Firebase
         window.initApp = init;
