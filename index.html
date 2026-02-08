@@ -393,6 +393,39 @@
                 opacity: 0;
             }
         }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
         
         /* Estilo para o controle de quantidade no modal */
         #total-container {
@@ -437,6 +470,34 @@
         .cart-shake {
             animation: cartShake 0.5s ease;
         }
+
+        /* Toast Notifications */
+        .toast {
+            background: #1e293b;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-weight: bold;
+            font-size: 12px;
+            animation: slideInRight 0.3s, slideOutRight 0.3s 2.7s forwards;
+            text-align: center;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 8px;
+        }
+
+        .toast-success { background: #10b981; }
+        .toast-error { background: #ef4444; }
+        .toast-warning { background: #f59e0b; }
+        .toast-info { background: #3b82f6; }
+
+        /* Modal de mensagem */
+        #modal-mensagem .bg-white,
+        #modal-confirmacao .bg-white {
+            animation: modalSlideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="flex justify-center">
@@ -450,6 +511,32 @@
     </div>
 
     <audio id="alerta-som" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <!-- Modal de Mensagem Personalizado -->
+    <div id="modal-mensagem" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm p-8 rounded-[40px] text-center shadow-2xl">
+            <div id="modal-mensagem-icon" class="text-4xl mb-4">⚠️</div>
+            <h3 id="modal-mensagem-titulo" class="text-xl font-bebas text-blue-600 mb-3">Atenção</h3>
+            <p id="modal-mensagem-texto" class="text-gray-700 mb-6">Mensagem de exemplo</p>
+            <button onclick="fecharModalMensagem()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-lg hover:bg-blue-700 transition">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="modal-confirmacao" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm p-8 rounded-[40px] text-center shadow-2xl">
+            <div id="modal-confirmacao-icon" class="text-4xl mb-4">❓</div>
+            <h3 id="modal-confirmacao-titulo" class="text-xl font-bebas text-blue-600 mb-3">Confirmar</h3>
+            <p id="modal-confirmacao-texto" class="text-gray-700 mb-6">Tem certeza que deseja realizar esta ação?</p>
+            <div class="flex gap-3">
+                <button onclick="fecharModalConfirmacao(false)" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-2xl font-bold hover:bg-gray-300 transition">Cancelar</button>
+                <button onclick="fecharModalConfirmacao(true)" class="flex-1 bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[1000] flex flex-col items-center space-y-2 pointer-events-none"></div>
 
     <!-- [ESTRUTURA DE IMPRESSÃO] -->
     <div id="secao-impressao" class="hidden font-mono text-[13px] leading-tight text-black bg-white p-4">
@@ -652,6 +739,77 @@
         let isAdmin = false;
         let pedidosListenerUnsubscribe = null;
         let currentUser = null;
+        let confirmCallback = null;
+
+        // ==================== SISTEMA DE MENSAGENS ====================
+
+        // Função para mostrar mensagem personalizada
+        function mostrarMensagem(titulo, texto, tipo = 'info') {
+            const modal = document.getElementById('modal-mensagem');
+            const icon = document.getElementById('modal-mensagem-icon');
+            const tituloEl = document.getElementById('modal-mensagem-titulo');
+            const textoEl = document.getElementById('modal-mensagem-texto');
+            
+            // Definir ícone baseado no tipo
+            const icones = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'warning': '⚠️',
+                'error': '❌'
+            };
+            
+            icon.textContent = icones[tipo] || 'ℹ️';
+            tituloEl.textContent = titulo;
+            textoEl.textContent = texto;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // Função para mostrar confirmação personalizada
+        function mostrarConfirmacao(titulo, texto, callback) {
+            const modal = document.getElementById('modal-confirmacao');
+            const tituloEl = document.getElementById('modal-confirmacao-titulo');
+            const textoEl = document.getElementById('modal-confirmacao-texto');
+            
+            tituloEl.textContent = titulo;
+            textoEl.textContent = texto;
+            confirmCallback = callback;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // Função para fechar modal de mensagem
+        function fecharModalMensagem() {
+            document.getElementById('modal-mensagem').classList.add('hidden');
+        }
+
+        // Função para fechar modal de confirmação
+        function fecharModalConfirmacao(confirmado) {
+            document.getElementById('modal-confirmacao').classList.add('hidden');
+            
+            if (confirmCallback && confirmado) {
+                confirmCallback();
+            }
+            
+            confirmCallback = null;
+        }
+
+        // Função para mostrar toast (notificação temporária)
+        function mostrarToast(mensagem, tipo = 'info', duracao = 3000) {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${tipo}`;
+            toast.textContent = mensagem;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, duracao);
+        }
 
         // ==================== FUNÇÕES DO SISTEMA ====================
 
@@ -816,6 +974,18 @@
             const container = document.getElementById('promocao-container');
             if (!container) return;
             
+            if (CONFIG.loja_aberta === false) {
+                container.innerHTML = `
+                    <div class="bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="p-6 text-center">
+                            <div class="text-4xl mb-2">🔒</div>
+                            <div class="font-bebas text-xl">LOJA FECHADA</div>
+                            <div class="text-sm opacity-80">Volte quando estivermos abertos!</div>
+                        </div>
+                    </div>`;
+                return;
+            }
+            
             if (PROMOCAO.ativa !== false) {
                 const desconto = PROMOCAO.preco_original ? 
                     Math.round((1 - (PROMOCAO.preco / PROMOCAO.preco_original)) * 100) : 0;
@@ -872,13 +1042,13 @@
 
         function addPromocao() {
             if(CONFIG.loja_aberta === false) {
-                alert("A loja está fechada no momento. Volte mais tarde!");
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Volte mais tarde!", "error");
                 return;
             }
             
             // Verificar se a promoção está ativa
             if (PROMOCAO.ativa === false) {
-                alert("Esta promoção não está mais disponível!");
+                mostrarMensagem("Promoção Indisponível", "Esta promoção não está mais disponível!", "error");
                 return;
             }
             
@@ -910,31 +1080,7 @@
                 }, 1000);
             }
             
-            // Feedback toast mais sutil
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #10b981;
-                color: white;
-                padding: 10px 20px;
-                border-radius: 15px;
-                font-weight: bold;
-                z-index: 1000;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                animation: slideIn 0.3s, slideOut 0.3s 1.5s forwards;
-                font-size: 12px;
-            `;
-            toast.innerHTML = `✅ ${PROMOCAO.titulo} adicionada!<br><small>R$ ${Number(PROMOCAO.preco || 39.90).toFixed(2).replace('.',',')}</small>`;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 2000);
+            mostrarToast(`✅ ${PROMOCAO.titulo} adicionada!\nR$ ${Number(PROMOCAO.preco || 39.90).toFixed(2).replace('.',',')}`, "success", 2000);
         }
 
         async function loadData() {
@@ -1228,6 +1374,18 @@
         }
 
         function renderCardapio(cid) {
+            // Se a loja estiver fechada, mostra mensagem de loja fechada
+            if (CONFIG.loja_aberta === false) {
+                const div = document.getElementById('cardapio');
+                div.innerHTML = `
+                    <div class="col-span-2 text-center py-10 text-gray-400 text-sm">
+                        <div class="text-4xl mb-4">🔒</div>
+                        <p class="font-bold">Loja Fechada</p>
+                        <p class="text-xs">Volte quando estivermos abertos!</p>
+                    </div>`;
+                return;
+            }
+            
             curCat = cid;
             renderFiltros();
             
@@ -1298,6 +1456,11 @@
         }
 
         function abrirDetalhesProduto(id) {
+            if(CONFIG.loja_aberta === false) {
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Volte mais tarde!", "error");
+                return;
+            }
+            
             const produto = PRODS.find(i => i.id === id);
             if (!produto) return;
             
@@ -1381,16 +1544,16 @@
 
         // FUNÇÃO: Abrir modal de vasilhame com quantidade (para o cardápio)
         function abrirModalVasilhameComQuantidade(produtoId) {
-            const produto = PRODS.find(i => i.id === produtoId);
-            if (!produto) return;
-            
             if(CONFIG.loja_aberta === false) {
-                alert("A loja está fechada no momento. Volte mais tarde!");
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Volte mais tarde!", "error");
                 return;
             }
             
+            const produto = PRODS.find(i => i.id === produtoId);
+            if (!produto) return;
+            
             if (produto.disponivel === false) {
-                alert("Esta cerveja não está disponível no momento!");
+                mostrarMensagem("Indisponível", "Esta cerveja não está disponível no momento!", "error");
                 return;
             }
             
@@ -1589,49 +1752,84 @@
             
             // Feedback visual apenas uma vez
             if (CARRINHO.filter(item => item.id === produto.id && item.vasilhame_opcao === opcao).length === quantidade) {
-                const toast = document.createElement('div');
-                toast.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: ${opcao === 'incluso' ? '#10b981' : '#3b82f6'};
-                    color: white;
-                    padding: 15px 25px;
-                    border-radius: 15px;
-                    font-weight: bold;
-                    z-index: 1000;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                    animation: slideIn 0.3s, slideOut 0.3s 2s forwards;
-                `;
                 const total = precoUnitario * quantidade;
-                toast.innerHTML = `✅ ${quantidade}x ${produto.nome}<br>
-                                  <small>${opcao === 'incluso' ? 'Vasilhame incluso' : 'Possuo vasilhame'}</small><br>
-                                  <strong>Total: R$ ${total.toFixed(2).replace('.',',')}</strong>`;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        document.body.removeChild(toast);
-                    }
-                }, 3000);
+                mostrarToast(`✅ ${quantidade}x ${produto.nome}\n${opcao === 'incluso' ? 'Vasilhame incluso' : 'Possuo vasilhame'}\nTotal: R$ ${total.toFixed(2).replace('.',',')}`, "success", 3000);
             }
         }
 
         // ATUALIZAR FUNÇÃO: Adicionar cerveja da tela de detalhes COM QUANTIDADE
         function adicionarCervejaComVasilhame(produtoId, opcaoBoolean) {
+            if(CONFIG.loja_aberta === false) {
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Volte mais tarde!", "error");
+                return;
+            }
+            
             const produto = PRODS.find(i => i.id === produtoId);
             if (!produto) return;
             
-            // Pedir quantidade
-            const quantidadeStr = prompt(`Quantas unidades de ${produto.nome}?`, "1");
-            if (!quantidadeStr) return;
+            // Pedir quantidade usando modal personalizado
+            const quantidadeHTML = `
+                <div id="modal-quantidade" class="fixed inset-0 bg-black/70 z-[500] flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-w-sm p-8 rounded-[40px] text-center shadow-2xl">
+                        <h3 class="text-xl font-bebas text-blue-600 mb-4">Quantas unidades?</h3>
+                        <div class="mb-6">
+                            <div class="flex items-center justify-center gap-4 mb-4">
+                                <button onclick="alterarQuantidadePrompt('decrease')" class="bg-blue-100 text-blue-700 w-12 h-12 rounded-full text-2xl font-bold hover:bg-blue-200 transition">-</button>
+                                <input type="number" id="quantidade-input" value="1" min="1" max="99" class="w-20 text-3xl font-black text-center border-0 outline-none bg-transparent">
+                                <button onclick="alterarQuantidadePrompt('increase')" class="bg-blue-100 text-blue-700 w-12 h-12 rounded-full text-2xl font-bold hover:bg-blue-200 transition">+</button>
+                            </div>
+                            <div class="text-sm text-gray-500">${produto.nome}</div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="cancelarQuantidade()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-2xl font-bold">Cancelar</button>
+                            <button onclick="confirmarQuantidadeCerveja('${produtoId}', ${opcaoBoolean})" class="flex-1 bg-blue-600 text-white py-3 rounded-2xl font-bold">Confirmar</button>
+                        </div>
+                    </div>
+                </div>`;
             
-            const quantidade = parseInt(quantidadeStr) || 1;
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = quantidadeHTML;
+            modalDiv.id = 'modal-quantidade-container';
+            document.body.appendChild(modalDiv);
+        }
+
+        function alterarQuantidadePrompt(acao) {
+            const input = document.getElementById('quantidade-input');
+            let valor = parseInt(input.value) || 1;
+            
+            if (acao === 'increase') {
+                valor++;
+            } else if (acao === 'decrease' && valor > 1) {
+                valor--;
+            }
+            
+            input.value = valor;
+        }
+
+        function cancelarQuantidade() {
+            const modal = document.getElementById('modal-quantidade-container');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function confirmarQuantidadeCerveja(produtoId, opcaoBoolean) {
+            const input = document.getElementById('quantidade-input');
+            const quantidade = parseInt(input.value) || 1;
+            
             if (quantidade < 1) {
-                alert("Quantidade deve ser maior que 0");
+                mostrarMensagem("Quantidade Inválida", "Quantidade deve ser maior que 0", "error");
                 return;
             }
+            
+            // Fechar modal
+            const modal = document.getElementById('modal-quantidade-container');
+            if (modal) {
+                modal.remove();
+            }
+            
+            const produto = PRODS.find(i => i.id === produtoId);
+            if (!produto) return;
             
             let opcao = opcaoBoolean ? 'incluso' : 'possui';
             let precoUnitario = produto.preco;
@@ -1660,18 +1858,18 @@
         // FUNÇÃO ATUALIZADA: Adicionar produto ao carrinho
         function addCart(id) {
             if(CONFIG.loja_aberta === false) {
-                alert("A loja está fechada no momento. Volte mais tarde!");
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Volte mais tarde!", "error");
                 return;
             }
             
             const produto = PRODS.find(i => i.id === id);
             if (!produto) {
-                alert("Bebida não encontrada!");
+                mostrarMensagem("Produto Não Encontrado", "Bebida não encontrada!", "error");
                 return;
             }
             
             if (produto.disponivel === false) {
-                alert("Esta bebida não está disponível no momento!");
+                mostrarMensagem("Indisponível", "Esta bebida não está disponível no momento!", "error");
                 return;
             }
             
@@ -1713,6 +1911,8 @@
                         btn.classList.add('bg-blue-500');
                     }, 500);
                 }
+                
+                mostrarToast(`✅ ${produto.nome} adicionada!`, "success", 1500);
             }
         }
 
@@ -1802,12 +2002,14 @@
 
         function removeCart(index) {
             if (index >= 0 && index < CARRINHO.length) {
+                const itemRemovido = CARRINHO[index];
                 CARRINHO.splice(index, 1);
                 updateCartFooter();
                 if (CARRINHO.length === 0) {
                     document.getElementById('cart-fixed').classList.add('hidden');
                 }
                 renderCarrinhoModal();
+                mostrarToast(`🗑️ ${itemRemovido.nome} removido`, "info", 1500);
             }
         }
 
@@ -1848,10 +2050,15 @@
 
         // NOVA FUNÇÃO: Remover todos os itens de um produto
         function removerItemPorId(itemId) {
+            const itensRemovidos = CARRINHO.filter(item => item.id === itemId);
             CARRINHO = CARRINHO.filter(item => item.id !== itemId);
             updateCartFooter();
             renderCarrinhoModal();
             renderCheckoutItens();
+            
+            if (itensRemovidos.length > 0) {
+                mostrarToast(`🗑️ ${itensRemovidos[0].nome} removido(s)`, "info", 1500);
+            }
         }
 
         function abrirCarrinho() {
@@ -2041,7 +2248,13 @@
 
         function abrirCheckout() {
             if (CARRINHO.length === 0) {
-                alert("Seu carrinho está vazio!");
+                mostrarMensagem("Carrinho Vazio", "Seu carrinho está vazio!", "warning");
+                return;
+            }
+            
+            // Verificar se loja está aberta
+            if (CONFIG.loja_aberta === false) {
+                mostrarMensagem("Loja Fechada", "A loja está fechada no momento. Não é possível finalizar pedidos.", "error");
                 return;
             }
             
@@ -2050,7 +2263,7 @@
             const pedidoMinimo = CONFIG.pedido_minimo || 25;
             
             if (total < pedidoMinimo) {
-                alert(`Pedido mínimo: R$ ${pedidoMinimo.toFixed(2).replace('.',',')}\nFaltam: R$ ${(pedidoMinimo - total).toFixed(2).replace('.',',')}`);
+                mostrarMensagem("Pedido Mínimo", `Pedido mínimo: R$ ${pedidoMinimo.toFixed(2).replace('.',',')}\nFaltam: R$ ${(pedidoMinimo - total).toFixed(2).replace('.',',')}`, "warning");
                 return;
             }
             
@@ -2194,7 +2407,7 @@
 
         function obterGPSCliente() {
             if (!navigator.geolocation) {
-                alert("Seu navegador não suporta geolocalização.");
+                mostrarMensagem("Geolocalização Não Suportada", "Seu navegador não suporta geolocalização.", "error");
                 return;
             }
             
@@ -2209,7 +2422,7 @@
                     lngCli = pos.coords.longitude;
                     
                     if (!CONFIG.lat_loja || !CONFIG.lng_loja) {
-                        alert("A loja ainda não configurou sua localização. Entre em contato diretamente.");
+                        mostrarMensagem("Localização da Loja", "A loja ainda não configurou sua localização. Entre em contato diretamente.", "info");
                         btn.innerText = textoOriginal;
                         btn.disabled = false;
                         return;
@@ -2254,7 +2467,7 @@
                         default:
                             mensagem += "Erro desconhecido.";
                     }
-                    alert(mensagem);
+                    mostrarMensagem("Erro de Localização", mensagem, "error");
                     btn.innerText = textoOriginal;
                     btn.disabled = false;
                 },
@@ -2270,19 +2483,19 @@
             
             // Validações
             if (!gpsOk) {
-                alert("📍 É necessário calcular o frete pelo GPS!");
+                mostrarMensagem("Frete Não Calculado", "📍 É necessário calcular o frete pelo GPS!", "warning");
                 return;
             }
             
             if (!nome) {
-                alert("Por favor, preencha seu nome!");
+                mostrarMensagem("Campo Obrigatório", "Por favor, preencha seu nome!", "warning");
                 document.getElementById('f-nome').focus();
                 return;
             }
             
             const whatsapp = document.getElementById('f-whatsapp').value.replace(/\D/g, '');
             if (whatsapp.length < 10) {
-                alert("Por favor, informe um WhatsApp válido!");
+                mostrarMensagem("WhatsApp Inválido", "Por favor, informe um WhatsApp válido!", "warning");
                 document.getElementById('f-whatsapp').focus();
                 return;
             }
@@ -2292,7 +2505,7 @@
             const bairro = document.getElementById('f-bairro').value.trim();
             
             if (!rua || !bairro) {
-                alert("Preencha o endereço completo!");
+                mostrarMensagem("Endereço Incompleto", "Preencha o endereço completo!", "warning");
                 return;
             }
             
@@ -2300,7 +2513,7 @@
             const total = CARRINHO.reduce((a, b) => a + Number(b.preco || 0), 0);
             const pedidoMinimo = CONFIG.pedido_minimo || 25;
             if (total < pedidoMinimo) {
-                alert(`Pedido mínimo: R$ ${pedidoMinimo.toFixed(2).replace('.',',')}\nFaltam: R$ ${(pedidoMinimo - total).toFixed(2).replace('.',',')}`);
+                mostrarMensagem("Pedido Mínimo", `Pedido mínimo: R$ ${pedidoMinimo.toFixed(2).replace('.',',')}\nFaltam: R$ ${(pedidoMinimo - total).toFixed(2).replace('.',',')}`, "warning");
                 return;
             }
             
@@ -2399,7 +2612,7 @@
                 
             } catch (error) {
                 console.error("Erro ao enviar pedido:", error);
-                alert("Erro ao enviar pedido. Tente novamente.");
+                mostrarMensagem("Erro no Pedido", "Erro ao enviar pedido. Tente novamente.", "error");
                 
                 // Reabilitar botão
                 const btn = document.getElementById('btn-final-zap');
@@ -2502,7 +2715,7 @@
                 location.reload();
             } catch (error) {
                 console.error("Erro ao sair:", error);
-                alert("Erro ao fazer logout!");
+                mostrarMensagem("Erro no Logout", "Erro ao fazer logout!", "error");
             }
         }
 
@@ -2513,10 +2726,35 @@
             if (CONFIG.loja_aberta !== false) {
                 b.innerText = "● ABERTO AGORA";
                 b.className = "inline-block px-4 py-1.5 rounded-full text-[9px] font-black mt-2 border text-green-600 bg-green-50 shadow-sm border-green-200";
+                
+                // Habilitar interface
+                document.querySelectorAll('#cardapio .product-card, #promocao-container').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                });
             } else {
-                b.innerText = "○ FECHADO AGORA";
-                b.className = "inline-block px-4 py-1.5 rounded-full text-[9px] font-black mt-2 border text-gray-400 bg-gray-50 shadow-sm border-gray-200";
+                b.innerText = "🔒 FECHADO AGORA";
+                b.className = "inline-block px-4 py-1.5 rounded-full text-[9px] font-black mt-2 border text-red-600 bg-red-50 shadow-sm border-red-200";
+                
+                // Desabilitar interface
+                document.querySelectorAll('#cardapio .product-card, #promocao-container').forEach(el => {
+                    el.style.opacity = '0.5';
+                    el.style.pointerEvents = 'none';
+                });
+                
+                // Ocultar carrinho fixo
+                document.getElementById('cart-fixed').classList.add('hidden');
+                
+                // Limpar carrinho se houver itens
+                if (CARRINHO.length > 0) {
+                    CARRINHO = [];
+                    updateCartFooter();
+                    mostrarMensagem("Loja Fechada", "A loja foi fechada. Seu carrinho foi esvaziado.", "info");
+                }
             }
+            
+            // Atualizar o cardápio
+            renderCardapio(curCat);
         }
 
         // ==================== FUNÇÕES DO PAINEL ADM (GERENCIAMENTO) ====================
@@ -2726,7 +2964,7 @@
                 const snap = await firestore.getDoc(docRef);
                 
                 if (!snap.exists()) {
-                    alert("Pedido não encontrado!");
+                    mostrarMensagem("Pedido Não Encontrado", "Pedido não encontrado!", "error");
                     return;
                 }
                 
@@ -2809,7 +3047,7 @@
                 
             } catch (error) {
                 console.error("Erro ao imprimir pedido:", error);
-                alert("Erro ao imprimir pedido!");
+                mostrarMensagem("Erro ao Imprimir", "Erro ao imprimir pedido!", "error");
             }
         }
 
@@ -2820,7 +3058,7 @@
                 const snap = await firestore.getDoc(docRef);
                 
                 if (!snap.exists()) {
-                    alert("Pedido não encontrado!");
+                    mostrarMensagem("Pedido Não Encontrado", "Pedido não encontrado!", "error");
                     return;
                 }
                 
@@ -2828,7 +3066,7 @@
                 const whatsapp = pedido.cliente_whatsapp;
                 
                 if (!whatsapp) {
-                    alert("Cliente não tem WhatsApp cadastrado!");
+                    mostrarMensagem("WhatsApp Não Cadastrado", "Cliente não tem WhatsApp cadastrado!", "warning");
                     return;
                 }
                 
@@ -2839,7 +3077,7 @@
                 
             } catch (error) {
                 console.error("Erro ao notificar cliente:", error);
-                alert("Erro ao notificar cliente!");
+                mostrarMensagem("Erro ao Notificar", "Erro ao notificar cliente!", "error");
             }
         }
 
@@ -2892,7 +3130,7 @@
                 
             } catch (error) {
                 console.error("Erro ao atualizar status:", error);
-                alert("Erro ao atualizar status!");
+                mostrarMensagem("Erro ao Atualizar", "Erro ao atualizar status!", "error");
                 
                 // Reverter UI em caso de erro
                 const elemento = event?.target;
@@ -2904,48 +3142,52 @@
 
         // CORREÇÃO: Função apagarPedido melhorada
         async function apagarPedido(id) {
-            if (!confirm("Tem certeza que deseja apagar este pedido?")) {
-                return;
-            }
-            
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                await firestore.deleteDoc(firestore.doc(db, "pedidos", id));
-                console.log(`Pedido ${id} apagado com sucesso`);
-                
-                // Remover da UI imediatamente
-                const elemento = document.getElementById(`pedido-${id}`);
-                if (elemento) {
-                    elemento.style.opacity = '0.5';
-                    elemento.style.transition = 'opacity 0.3s, height 0.3s, margin 0.3s';
-                    elemento.style.height = `${elemento.offsetHeight}px`;
-                    
-                    setTimeout(() => {
-                        elemento.style.height = '0';
-                        elemento.style.margin = '0';
-                        elemento.style.padding = '0';
-                        elemento.style.overflow = 'hidden';
+            mostrarConfirmacao(
+                "Apagar Pedido",
+                "Tem certeza que deseja apagar este pedido?",
+                async () => {
+                    try {
+                        const { db, firestore } = getFirebaseRefs();
+                        await firestore.deleteDoc(firestore.doc(db, "pedidos", id));
+                        console.log(`Pedido ${id} apagado com sucesso`);
                         
-                        setTimeout(() => {
-                            elemento.remove();
-                        }, 300);
-                    }, 10);
+                        // Remover da UI imediatamente
+                        const elemento = document.getElementById(`pedido-${id}`);
+                        if (elemento) {
+                            elemento.style.opacity = '0.5';
+                            elemento.style.transition = 'opacity 0.3s, height 0.3s, margin 0.3s';
+                            elemento.style.height = `${elemento.offsetHeight}px`;
+                            
+                            setTimeout(() => {
+                                elemento.style.height = '0';
+                                elemento.style.margin = '0';
+                                elemento.style.padding = '0';
+                                elemento.style.overflow = 'hidden';
+                                
+                                setTimeout(() => {
+                                    elemento.remove();
+                                }, 300);
+                            }, 10);
+                        }
+                        
+                        mostrarToast("Pedido apagado com sucesso!", "success");
+                        
+                    } catch (error) {
+                        console.error("Erro ao apagar pedido:", error);
+                        
+                        let mensagem = "Erro ao apagar pedido!";
+                        if (error.code === 'permission-denied') {
+                            mensagem = "Permissão negada. Verifique se você está logado como administrador.";
+                        } else if (error.code === 'not-found') {
+                            mensagem = "Pedido não encontrado. Pode já ter sido apagado.";
+                        } else {
+                            mensagem = `Erro: ${error.message}`;
+                        }
+                        
+                        mostrarMensagem("Erro ao Apagar", mensagem, "error");
+                    }
                 }
-                
-            } catch (error) {
-                console.error("Erro ao apagar pedido:", error);
-                
-                let mensagem = "Erro ao apagar pedido!";
-                if (error.code === 'permission-denied') {
-                    mensagem = "Permissão negada. Verifique se você está logado como administrador.";
-                } else if (error.code === 'not-found') {
-                    mensagem = "Pedido não encontrado. Pode já ter sido apagado.";
-                } else {
-                    mensagem = `Erro: ${error.message}`;
-                }
-                
-                alert(mensagem);
-            }
+            );
         }
 
         async function renderProdutosADM() {
@@ -3024,11 +3266,11 @@
                 };
                 
                 const docRef = await firestore.addDoc(firestore.collection(db, "produtos"), novoProd);
-                alert("Bebida criada! Edite as informações.");
+                mostrarToast("Bebida criada! Edite as informações.", "success");
                 renderProdutosADM();
             } catch (error) {
                 console.error("Erro ao criar bebida:", error);
-                alert("Erro ao criar bebida!");
+                mostrarMensagem("Erro ao Criar", "Erro ao criar bebida!", "error");
             }
         }
 
@@ -3060,7 +3302,7 @@
                 document.getElementById('modal-editar-prod').classList.remove('hidden');
             } catch (error) {
                 console.error("Erro ao editar produto:", error);
-                alert("Erro ao carregar bebida!");
+                mostrarMensagem("Erro ao Carregar", "Erro ao carregar bebida!", "error");
             }
         }
 
@@ -3081,10 +3323,10 @@
                 
                 fecharModalEditar();
                 renderProdutosADM();
-                alert("Bebida atualizada com sucesso!");
+                mostrarToast("Bebida atualizada com sucesso!", "success");
             } catch (error) {
                 console.error("Erro ao salvar edição:", error);
-                alert("Erro ao salvar edição!");
+                mostrarMensagem("Erro ao Salvar", "Erro ao salvar edição!", "error");
             }
         }
 
@@ -3092,6 +3334,7 @@
             document.getElementById('modal-editar-prod').classList.add('hidden');
         }
 
+        // CORREÇÃO: Função toggleDisponibilidade corrigida
         async function toggleDisponibilidade(id, atual) {
             try {
                 const { db, firestore } = getFirebaseRefs();
@@ -3100,49 +3343,58 @@
                     disponivel: !atual
                 });
                 
-                // Atualizar lista
+                // Atualizar lista local
                 const produto = PRODS.find(p => p.id === id);
                 if (produto) {
                     produto.disponivel = !atual;
                 }
                 
-                // Feedback visual
+                // Atualizar interface
                 const btn = event.target.closest('button');
                 if (btn) {
                     const icon = btn.querySelector('i');
                     if (icon) {
                         if (!atual) {
                             icon.className = "fas fa-toggle-on text-green-500";
+                            mostrarToast("Produto ativado com sucesso!", "success");
                         } else {
                             icon.className = "fas fa-toggle-off text-gray-400";
+                            mostrarToast("Produto desativado com sucesso!", "success");
                         }
                     }
                 }
                 
+                // Recarregar o cardápio do cliente se estiver visível
+                if (!document.getElementById('view-admin').classList.contains('hidden')) {
+                    renderProdutosADM();
+                }
+                
             } catch (error) {
                 console.error("Erro ao alternar disponibilidade:", error);
-                alert("Erro ao alterar disponibilidade!");
+                mostrarToast("Erro ao alterar disponibilidade!", "error");
             }
         }
 
         async function excluirProduto(id) {
-            if (!confirm("Tem certeza que deseja excluir esta bebida?")) {
-                return;
-            }
-            
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                await firestore.deleteDoc(firestore.doc(db, "produtos", id));
-                
-                // Remover da lista local
-                PRODS = PRODS.filter(p => p.id !== id);
-                
-                renderProdutosADM();
-                alert("Bebida excluída com sucesso!");
-            } catch (error) {
-                console.error("Erro ao excluir bebida:", error);
-                alert("Erro ao excluir bebida!");
-            }
+            mostrarConfirmacao(
+                "Excluir Bebida",
+                "Tem certeza que deseja excluir esta bebida?",
+                async () => {
+                    try {
+                        const { db, firestore } = getFirebaseRefs();
+                        await firestore.deleteDoc(firestore.doc(db, "produtos", id));
+                        
+                        // Remover da lista local
+                        PRODS = PRODS.filter(p => p.id !== id);
+                        
+                        renderProdutosADM();
+                        mostrarToast("Bebida excluída com sucesso!", "success");
+                    } catch (error) {
+                        console.error("Erro ao excluir bebida:", error);
+                        mostrarMensagem("Erro ao Excluir", "Erro ao excluir bebida!", "error");
+                    }
+                }
+            );
         }
 
         async function renderCategoriasADM() {
@@ -3196,12 +3448,12 @@
                 };
                 
                 await firestore.addDoc(firestore.collection(db, "categorias"), novaCat);
-                alert("Categoria criada!");
+                mostrarToast("Categoria criada!", "success");
                 await loadData();
                 renderCategoriasADM();
             } catch (error) {
                 console.error("Erro ao criar categoria:", error);
-                alert("Erro ao criar categoria!");
+                mostrarMensagem("Erro ao Criar", "Erro ao criar categoria!", "error");
             }
         }
 
@@ -3222,49 +3474,51 @@
                     ordem: novaOrdem || 999
                 });
                 
-                alert("Categoria atualizada!");
+                mostrarToast("Categoria atualizada!", "success");
                 await loadData();
                 renderCategoriasADM();
             } catch (error) {
                 console.error("Erro ao editar categoria:", error);
-                alert("Erro ao editar categoria!");
+                mostrarMensagem("Erro ao Editar", "Erro ao editar categoria!", "error");
             }
         }
 
         async function excluirCategoria(id) {
-            if (!confirm("ATENÇÃO: Ao excluir esta categoria, todas as bebidas relacionadas serão movidas para 'Sem categoria'. Continuar?")) {
-                return;
-            }
-            
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                
-                // Verificar se há produtos nesta categoria
-                const produtosNaCategoria = PRODS.filter(p => p.categoria_id === id);
-                
-                if (produtosNaCategoria.length > 0) {
-                    // Mover produtos para primeira categoria disponível ou sem categoria
-                    const primeiraOutraCat = CATS.find(c => c.id !== id && c.tipo === 'categoria');
-                    
-                    for (const produto of produtosNaCategoria) {
-                        const prodRef = firestore.doc(db, "produtos", produto.id);
-                        await firestore.updateDoc(prodRef, {
-                            categoria_id: primeiraOutraCat ? primeiraOutraCat.id : ""
-                        });
+            mostrarConfirmacao(
+                "Excluir Categoria",
+                "ATENÇÃO: Ao excluir esta categoria, todas as bebidas relacionadas serão movidas para 'Sem categoria'. Continuar?",
+                async () => {
+                    try {
+                        const { db, firestore } = getFirebaseRefs();
+                        
+                        // Verificar se há produtos nesta categoria
+                        const produtosNaCategoria = PRODS.filter(p => p.categoria_id === id);
+                        
+                        if (produtosNaCategoria.length > 0) {
+                            // Mover produtos para primeira categoria disponível ou sem categoria
+                            const primeiraOutraCat = CATS.find(c => c.id !== id && c.tipo === 'categoria');
+                            
+                            for (const produto of produtosNaCategoria) {
+                                const prodRef = firestore.doc(db, "produtos", produto.id);
+                                await firestore.updateDoc(prodRef, {
+                                    categoria_id: primeiraOutraCat ? primeiraOutraCat.id : ""
+                                });
+                            }
+                        }
+                        
+                        // Excluir categoria
+                        await firestore.deleteDoc(firestore.doc(db, "categorias", id));
+                        
+                        mostrarToast("Categoria excluída!", "success");
+                        await loadData();
+                        renderCategoriasADM();
+                        renderProdutosADM();
+                    } catch (error) {
+                        console.error("Erro ao excluir categoria:", error);
+                        mostrarMensagem("Erro ao Excluir", "Erro ao excluir categoria!", "error");
                     }
                 }
-                
-                // Excluir categoria
-                await firestore.deleteDoc(firestore.doc(db, "categorias", id));
-                
-                alert("Categoria excluída!");
-                await loadData();
-                renderCategoriasADM();
-                renderProdutosADM();
-            } catch (error) {
-                console.error("Erro ao excluir categoria:", error);
-                alert("Erro ao excluir categoria!");
-            }
+            );
         }
 
         async function renderCuponsADM() {
@@ -3330,7 +3584,7 @@
                 };
                 
                 await firestore.addDoc(firestore.collection(db, "cupons"), novoCupom);
-                alert("Cupom criado!");
+                mostrarToast("Cupom criado!", "success");
                 
                 // Recarregar cupons
                 const cuponsSnap = await firestore.getDocs(firestore.collection(db, "cupons"));
@@ -3339,7 +3593,7 @@
                 renderCuponsADM();
             } catch (error) {
                 console.error("Erro ao criar cupom:", error);
-                alert("Erro ao criar cupom!");
+                mostrarMensagem("Erro ao Criar", "Erro ao criar cupom!", "error");
             }
         }
 
@@ -3358,30 +3612,33 @@
                 }
                 
                 renderCuponsADM();
+                mostrarToast(`Cupom ${!atual ? 'ativado' : 'desativado'}!`, "success");
             } catch (error) {
                 console.error("Erro ao alternar cupom:", error);
-                alert("Erro ao alterar cupom!");
+                mostrarMensagem("Erro ao Alterar", "Erro ao alterar cupom!", "error");
             }
         }
 
         async function excluirCupom(id) {
-            if (!confirm("Tem certeza que deseja excluir este cupom?")) {
-                return;
-            }
-            
-            try {
-                const { db, firestore } = getFirebaseRefs();
-                await firestore.deleteDoc(firestore.doc(db, "cupons", id));
-                
-                // Remover da lista local
-                CUPONS = CUPONS.filter(c => c.id !== id);
-                
-                renderCuponsADM();
-                alert("Cupom excluído!");
-            } catch (error) {
-                console.error("Erro ao excluir cupom:", error);
-                alert("Erro ao excluir cupom!");
-            }
+            mostrarConfirmacao(
+                "Excluir Cupom",
+                "Tem certeza que deseja excluir este cupom?",
+                async () => {
+                    try {
+                        const { db, firestore } = getFirebaseRefs();
+                        await firestore.deleteDoc(firestore.doc(db, "cupons", id));
+                        
+                        // Remover da lista local
+                        CUPONS = CUPONS.filter(c => c.id !== id);
+                        
+                        renderCuponsADM();
+                        mostrarToast("Cupom excluído!", "success");
+                    } catch (error) {
+                        console.error("Erro ao excluir cupom:", error);
+                        mostrarMensagem("Erro ao Excluir", "Erro ao excluir cupom!", "error");
+                    }
+                }
+            );
         }
 
         async function renderConfigADM() {
@@ -3497,7 +3754,7 @@
         // NOVA FUNÇÃO: Obter localização da loja
         async function obterLocalizacaoLoja() {
             if (!navigator.geolocation) {
-                alert("Seu navegador não suporta geolocalização.");
+                mostrarMensagem("Geolocalização Não Suportada", "Seu navegador não suporta geolocalização.", "error");
                 return;
             }
             
@@ -3521,7 +3778,7 @@
                     btn.innerHTML = textoOriginal;
                     btn.disabled = false;
                     
-                    alert(`Localização da loja definida!\nLat: ${lat.toFixed(6)}\nLng: ${lng.toFixed(6)}`);
+                    mostrarMensagem("Localização Definida", `Localização da loja definida!\nLat: ${lat.toFixed(6)}\nLng: ${lng.toFixed(6)}`, "success");
                 },
                 (error) => {
                     let mensagem = "Erro ao obter localização: ";
@@ -3538,7 +3795,7 @@
                         default:
                             mensagem = "Erro desconhecido.";
                     }
-                    alert(mensagem);
+                    mostrarMensagem("Erro de Localização", mensagem, "error");
                     btn.innerHTML = textoOriginal;
                     btn.disabled = false;
                 },
@@ -3609,10 +3866,10 @@
                     document.getElementById('cli-logo').src = CONFIG.logo_url;
                 }
                 
-                alert("Configurações salvas com sucesso!");
+                mostrarToast("Configurações salvas com sucesso!", "success");
             } catch (error) {
                 console.error("Erro ao salvar configurações:", error);
-                alert("Erro ao salvar configurações!");
+                mostrarMensagem("Erro ao Salvar", "Erro ao salvar configurações!", "error");
             }
         }
 
@@ -3684,7 +3941,7 @@
                 const snap = await firestore.getDoc(docRef);
                 
                 if (!snap.exists()) {
-                    alert("Promoção não encontrada!");
+                    mostrarMensagem("Promoção Não Encontrada", "Promoção não encontrada!", "error");
                     return;
                 }
                 
@@ -3725,10 +3982,10 @@
                 renderPromocoesADM();
                 renderPromocaoCliente();
                 
-                alert("Promoção atualizada com sucesso!");
+                mostrarToast("Promoção atualizada com sucesso!", "success");
             } catch (error) {
                 console.error("Erro ao editar promoção:", error);
-                alert("Erro ao editar promoção!");
+                mostrarMensagem("Erro ao Editar", "Erro ao editar promoção!", "error");
             }
         }
 
@@ -3746,10 +4003,10 @@
                 // Atualizar UI do cliente
                 renderPromocaoCliente();
                 
-                alert(`Promoção ${novoStatus ? 'ativada' : 'desativada'}!`);
+                mostrarToast(`Promoção ${novoStatus ? 'ativada' : 'desativada'}!`, "success");
             } catch (error) {
                 console.error("Erro ao alternar status da promoção:", error);
-                alert("Erro ao alterar status!");
+                mostrarMensagem("Erro ao Alterar", "Erro ao alterar status!", "error");
             }
         }
 
@@ -3758,13 +4015,13 @@
         function aplicarCupom() {
             const codigo = document.getElementById('f-cupom').value.trim().toUpperCase();
             if (!codigo) {
-                alert("Digite um código de cupom!");
+                mostrarMensagem("Cupom Vazio", "Digite um código de cupom!", "warning");
                 return;
             }
             
             const cupom = CUPONS.find(c => c.codigo === codigo && c.ativo !== false);
             if (!cupom) {
-                alert("Cupom inválido ou expirado!");
+                mostrarMensagem("Cupom Inválido", "Cupom inválido ou expirado!", "error");
                 return;
             }
             
@@ -3774,6 +4031,7 @@
             document.getElementById('f-cupom').value = "";
             document.getElementById('f-cupom').placeholder = `Cupom ${codigo} aplicado!`;
             renderCheckoutTotal();
+            mostrarToast("Cupom aplicado com sucesso!", "success");
         }
 
         // ==================== EXPORTA FUNÇÕES PARA O ESCOPO GLOBAL ====================
@@ -3837,6 +4095,16 @@
         window.adicionarAoCarrinhoComQuantidade = adicionarAoCarrinhoComQuantidade;
         window.abrirModalVasilhameComQuantidade = abrirModalVasilhameComQuantidade;
         window.abrirModalVasilhame = abrirModalVasilhame;
+
+        // Sistema de mensagens
+        window.mostrarMensagem = mostrarMensagem;
+        window.mostrarConfirmacao = mostrarConfirmacao;
+        window.mostrarToast = mostrarToast;
+        window.fecharModalMensagem = fecharModalMensagem;
+        window.fecharModalConfirmacao = fecharModalConfirmacao;
+        window.alterarQuantidadePrompt = alterarQuantidadePrompt;
+        window.cancelarQuantidade = cancelarQuantidade;
+        window.confirmarQuantidadeCerveja = confirmarQuantidadeCerveja;
 
         // Animações
         window.animarParaCarrinho = animarParaCarrinho;
